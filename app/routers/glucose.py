@@ -1,10 +1,21 @@
-﻿from fastapi import APIRouter, Depends, HTTPException, status
+﻿from fastapi import (
+    APIRouter,
+    Depends,
+    status,
+)
 from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.models.glucose import GlucoseReading
 from app.models.user import User
-from app.schemas.glucose import GlucoseCreate, GlucoseResponse
+from app.routers.auth import (
+    ensure_user_access,
+    get_current_user,
+)
+from app.schemas.glucose import (
+    GlucoseCreate,
+    GlucoseResponse,
+)
 
 
 router = APIRouter(
@@ -20,25 +31,36 @@ router = APIRouter(
 )
 def create_glucose_reading(
     data: GlucoseCreate,
-    db: Session = Depends(get_db)
+    db: Session = Depends(
+        get_db
+    ),
+    current_user: User = Depends(
+        get_current_user
+    )
 ):
-    user = db.get(User, data.user_id)
+    ensure_user_access(
+        requested_user_id=
+            data.user_id,
 
-    if user is None:
-        raise HTTPException(
-            status_code=404,
-            detail="User not found"
-        )
+        current_user=
+            current_user
+    )
 
     reading = GlucoseReading(
-        user_id=data.user_id,
+        user_id=current_user.id,
         measured_at=data.measured_at,
         value_mmol_l=data.value_mmol_l,
         source=data.source
     )
 
-    db.add(reading)
+    db.add(
+        reading
+    )
+
     db.commit()
-    db.refresh(reading)
+
+    db.refresh(
+        reading
+    )
 
     return reading

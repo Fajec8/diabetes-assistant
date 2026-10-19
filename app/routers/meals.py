@@ -16,6 +16,10 @@ from app.database import get_db
 from app.models.meal import Meal
 from app.models.meal_item import MealItem
 from app.models.user import User
+from app.routers.auth import (
+    ensure_user_access,
+    get_current_user,
+)
 from app.schemas.meal import (
     MealBolusAnalysisResponse,
     MealCreate,
@@ -39,23 +43,26 @@ router = APIRouter(
 )
 def create_meal(
     data: MealCreate,
-    db: Session = Depends(get_db)
+    db: Session = Depends(
+        get_db
+    ),
+    current_user: User = Depends(
+        get_current_user
+    )
 ):
-    user = db.get(
-        User,
-        data.user_id
+    ensure_user_access(
+        requested_user_id=
+            data.user_id,
+
+        current_user=
+            current_user
     )
 
-    if user is None:
-        raise HTTPException(
-            status_code=404,
-            detail="User not found"
-        )
-
     meal = Meal(
-        user_id=data.user_id,
+        user_id=current_user.id,
         eaten_at=data.eaten_at,
-        carbohydrates_g=data.carbohydrates_g,
+        carbohydrates_g=
+            data.carbohydrates_g,
         description=data.description,
         note=data.note
     )
@@ -69,14 +76,24 @@ def create_meal(
     for item_data in data.items:
         item = MealItem(
             meal_id=meal.id,
-            food_name=item_data.food_name,
-            preparation=item_data.preparation,
-            variant=item_data.variant,
-            amount_g=item_data.amount_g,
-            carbohydrates_g=(
-                item_data.carbohydrates_g
-            ),
-            note=item_data.note
+
+            food_name=
+                item_data.food_name,
+
+            preparation=
+                item_data.preparation,
+
+            variant=
+                item_data.variant,
+
+            amount_g=
+                item_data.amount_g,
+
+            carbohydrates_g=
+                item_data.carbohydrates_g,
+
+            note=
+                item_data.note
         )
 
         db.add(
@@ -109,23 +126,38 @@ def create_meal(
 
 @router.get(
     "/{meal_id}/bolus-analysis",
-    response_model=MealBolusAnalysisResponse
+    response_model=
+        MealBolusAnalysisResponse
 )
 def get_meal_bolus_analysis(
     meal_id: uuid.UUID,
-    db: Session = Depends(get_db)
+    db: Session = Depends(
+        get_db
+    ),
+    current_user: User = Depends(
+        get_current_user
+    )
 ):
+    meal = db.get(
+        Meal,
+        meal_id
+    )
+
+    if (
+        meal is None
+        or meal.user_id
+        != current_user.id
+    ):
+        raise HTTPException(
+            status_code=404,
+            detail="Meal not found"
+        )
+
     result = (
         analyze_meal_bolus(
             db=db,
             meal_id=meal_id
         )
     )
-
-    if result is None:
-        raise HTTPException(
-            status_code=404,
-            detail="Meal not found"
-        )
 
     return result

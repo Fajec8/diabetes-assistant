@@ -10,6 +10,10 @@ from app.database import get_db
 from app.models.insulin import InsulinDose
 from app.models.meal import Meal
 from app.models.user import User
+from app.routers.auth import (
+    ensure_user_access,
+    get_current_user,
+)
 from app.schemas.insulin import (
     InsulinCreate,
     InsulinResponse,
@@ -29,21 +33,24 @@ router = APIRouter(
 )
 def create_insulin_dose(
     data: InsulinCreate,
-    db: Session = Depends(get_db)
+    db: Session = Depends(
+        get_db
+    ),
+    current_user: User = Depends(
+        get_current_user
+    )
 ):
-    user = db.get(
-        User,
-        data.user_id
+    ensure_user_access(
+        requested_user_id=
+            data.user_id,
+
+        current_user=
+            current_user
     )
 
-    if user is None:
-        raise HTTPException(
-            status_code=404,
-            detail="User not found"
-        )
-
     if (
-        data.meal_id is not None
+        data.meal_id
+        is not None
     ):
         if (
             data.insulin_type
@@ -62,30 +69,24 @@ def create_insulin_dose(
             data.meal_id
         )
 
-        if meal is None:
+        if (
+            meal is None
+            or meal.user_id
+            != current_user.id
+        ):
             raise HTTPException(
                 status_code=404,
                 detail="Meal not found"
             )
 
-        if (
-            meal.user_id
-            != data.user_id
-        ):
-            raise HTTPException(
-                status_code=400,
-                detail=(
-                    "Meal belongs to "
-                    "a different user"
-                )
-            )
-
     dose = InsulinDose(
-        user_id=data.user_id,
+        user_id=current_user.id,
         meal_id=data.meal_id,
-        insulin_type=data.insulin_type,
+        insulin_type=
+            data.insulin_type,
         units=data.units,
-        administered_at=data.administered_at,
+        administered_at=
+            data.administered_at,
         source=data.source,
         note=data.note
     )
