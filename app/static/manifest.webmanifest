@@ -1,0 +1,12 @@
+{
+  "id": "/app",
+  "name": "Diabetes Assistant",
+  "short_name": "Diabetes",
+  "description": "Osobní aplikace pro záznam a analýzu diabetických dat.",
+  "lang": "cs",
+  "start_url": "/app",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f5f5f7",
+  "theme_color": "#007aff"
+}

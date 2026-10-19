@@ -2,6 +2,7 @@
 
 from fastapi import FastAPI
 from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 from sqlalchemy import text
 
 from app.database import engine
@@ -34,10 +35,25 @@ APP_DIRECTORY = (
     .parent
 )
 
+STATIC_DIRECTORY = (
+    APP_DIRECTORY
+    / "static"
+)
+
 
 app = FastAPI(
     title="Diabetes Assistant API",
-    version="0.4.0"
+    version="0.5.0"
+)
+
+
+app.mount(
+    "/static",
+    StaticFiles(
+        directory=
+            STATIC_DIRECTORY
+    ),
+    name="static"
 )
 
 
@@ -72,9 +88,49 @@ app.include_router(
 )
 def mobile_app():
     return FileResponse(
-        APP_DIRECTORY
-        / "static"
-        / "index.html"
+        STATIC_DIRECTORY
+        / "index.html",
+        headers={
+            "Cache-Control":
+                "no-cache"
+        }
+    )
+
+
+@app.get(
+    "/manifest.webmanifest",
+    include_in_schema=False
+)
+def web_manifest():
+    return FileResponse(
+        STATIC_DIRECTORY
+        / "manifest.webmanifest",
+        media_type=
+            "application/manifest+json",
+        headers={
+            "Cache-Control":
+                "no-cache"
+        }
+    )
+
+
+@app.get(
+    "/service-worker.js",
+    include_in_schema=False
+)
+def service_worker():
+    return FileResponse(
+        STATIC_DIRECTORY
+        / "service-worker.js",
+        media_type=
+            "application/javascript",
+        headers={
+            "Cache-Control":
+                "no-cache",
+
+            "Service-Worker-Allowed":
+                "/"
+        }
     )
 
 
