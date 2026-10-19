@@ -1,4 +1,7 @@
-﻿from fastapi import FastAPI
+﻿from pathlib import Path
+
+from fastapi import FastAPI
+from fastapi.responses import FileResponse
 from sqlalchemy import text
 
 from app.database import engine
@@ -23,9 +26,18 @@ from app.routers.situations import (
 )
 
 
+APP_DIRECTORY = (
+    Path(
+        __file__
+    )
+    .resolve()
+    .parent
+)
+
+
 app = FastAPI(
     title="Diabetes Assistant API",
-    version="0.3.0"
+    version="0.4.0"
 )
 
 
@@ -52,6 +64,18 @@ app.include_router(
 app.include_router(
     situations_router
 )
+
+
+@app.get(
+    "/app",
+    include_in_schema=False
+)
+def mobile_app():
+    return FileResponse(
+        APP_DIRECTORY
+        / "static"
+        / "index.html"
+    )
 
 
 @app.get("/")
