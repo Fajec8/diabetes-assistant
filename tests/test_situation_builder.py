@@ -1,94 +1,253 @@
-﻿from datetime import datetime
+﻿import uuid
+from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
 import pytest
-from sqlalchemy import select
 
 from app.database import SessionLocal
+from app.models.activity import Activity
+from app.models.glucose import GlucoseReading
+from app.models.insulin import InsulinDose
+from app.models.meal import Meal
 from app.models.user import User
-from app.services.situation_builder import (
-    build_situation,
-)
+from app.services.situation_builder import build_situation
+
+
+TZ = ZoneInfo("Europe/Prague")
+
+
+GLUCOSE_VALUES = [
+    7.6,
+    7.7,
+    7.9,
+    8.0,
+    8.2,
+    8.4,
+    8.6,
+    8.8,
+    8.9,
+    9.0,
+    9.1,
+    9.0,
+    8.9,
+    8.8,
+    8.6,
+    8.5,
+    8.4,
+    8.2,
+    8.1,
+    8.0,
+    7.8,
+    7.6,
+    7.5,
+    7.3,
+    7.2,
+]
+
+
+def _seed_isolated_situation(
+    db,
+    t0: datetime,
+) -> User:
+    user = User(
+        email=(
+            f"situation-builder-"
+            f"{uuid.uuid4()}@example.com"
+        ),
+        password_hash="test-only",
+        display_name="Situation Builder Test",
+        timezone="Europe/Prague",
+    )
+
+    db.add(
+        user
+    )
+
+    db.flush()
+
+    glucose_start = (
+        t0
+        - timedelta(
+            minutes=120
+        )
+    )
+
+    for index, value in enumerate(
+        GLUCOSE_VALUES
+    ):
+        db.add(
+            GlucoseReading(
+                user_id=user.id,
+                measured_at=(
+                    glucose_start
+                    + timedelta(
+                        minutes=5 * index
+                    )
+                ),
+                value_mmol_l=value,
+                source="CGM",
+            )
+        )
+
+    meal = Meal(
+        user_id=user.id,
+        eaten_at=(
+            t0
+            - timedelta(
+                minutes=90
+            )
+        ),
+        carbohydrates_g=60,
+        description=(
+            "Isolated situation builder test meal"
+        ),
+        note=None,
+    )
+
+    db.add(
+        meal
+    )
+
+    db.add(
+        InsulinDose(
+            user_id=user.id,
+            meal_id=None,
+            insulin_type="NOVORAPID",
+            units=6,
+            administered_at=(
+                t0
+                - timedelta(
+                    minutes=85
+                )
+            ),
+            source="MANUAL",
+            note=None,
+        )
+    )
+
+    basal_time = (
+        t0.replace(
+            hour=22,
+            minute=0,
+            second=0,
+            microsecond=0,
+        )
+        - timedelta(
+            days=1
+        )
+    )
+
+    db.add(
+        InsulinDose(
+            user_id=user.id,
+            meal_id=None,
+            insulin_type="TRESIBA",
+            units=16,
+            administered_at=(
+                basal_time
+            ),
+            source="MANUAL",
+            note=None,
+        )
+    )
+
+    db.add(
+        Activity(
+            user_id=user.id,
+            started_at=(
+                t0
+                - timedelta(
+                    minutes=270
+                )
+            ),
+            ended_at=(
+                t0
+                - timedelta(
+                    minutes=150
+                )
+            ),
+            activity_type="GYM",
+            intensity="MEDIUM",
+            note=None,
+        )
+    )
+
+    db.add(
+        Activity(
+            user_id=user.id,
+            started_at=(
+                t0
+                - timedelta(
+                    hours=30
+                )
+            ),
+            ended_at=(
+                t0
+                - timedelta(
+                    hours=28
+                )
+            ),
+            activity_type="GYM",
+            intensity="MEDIUM",
+            note=None,
+        )
+    )
+
+    db.flush()
+
+    return user
 
 
 def test_seeded_situation_1330():
     db = SessionLocal()
 
     try:
-        user = db.scalar(
-            select(User).where(
-                User.email
-                == "test@example.com"
-            )
-        )
-
-        assert user is not None
-
         t0 = datetime(
             2026,
             10,
             3,
             13,
             30,
-            tzinfo=ZoneInfo(
-                "Europe/Prague"
-            )
+            tzinfo=TZ,
+        )
+
+        user = _seed_isolated_situation(
+            db=db,
+            t0=t0,
         )
 
         situation = build_situation(
             db=db,
             user_id=user.id,
-            t0=t0
+            t0=t0,
         )
 
         assert (
-            situation[
-                "glucose"
-            ][
-                "current"
-            ]
+            situation["glucose"]["current"]
             == 7.2
         )
 
         assert (
-            situation[
-                "glucose"
-            ][
-                "delta_15m"
-            ]
+            situation["glucose"]["delta_15m"]
             == -0.4
         )
 
         assert (
-            situation[
-                "glucose"
-            ][
-                "delta_30m"
-            ]
+            situation["glucose"]["delta_30m"]
             == -0.9
         )
 
         assert (
-            situation[
-                "glucose"
-            ][
-                "delta_60m"
-            ]
+            situation["glucose"]["delta_60m"]
             == -1.7
         )
 
         quality = (
-            situation[
-                "glucose"
-            ][
-                "data_quality"
-            ]
+            situation["glucose"]["data_quality"]
         )
 
         assert (
-            quality[
-                "window_minutes"
-            ]
+            quality["window_minutes"]
             == 120
         )
 
@@ -100,30 +259,22 @@ def test_seeded_situation_1330():
         )
 
         assert (
-            quality[
-                "expected_readings"
-            ]
+            quality["expected_readings"]
             == 25
         )
 
         assert (
-            quality[
-                "actual_readings"
-            ]
+            quality["actual_readings"]
             == 25
         )
 
         assert (
-            quality[
-                "coverage_percent"
-            ]
+            quality["coverage_percent"]
             == 100.0
         )
 
         assert (
-            quality[
-                "max_gap_minutes"
-            ]
+            quality["max_gap_minutes"]
             == 5.0
         )
 
@@ -216,7 +367,7 @@ def test_seeded_situation_1330():
             ]
             == pytest.approx(
                 3.875,
-                abs=0.01
+                abs=0.01,
             )
         )
 
@@ -347,4 +498,5 @@ def test_seeded_situation_1330():
         )
 
     finally:
+        db.rollback()
         db.close()

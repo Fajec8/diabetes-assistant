@@ -1,0 +1,3033 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1"
+    >
+
+    <title>Diabetes Assistant – Shadow</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+
+            font-family:
+                -apple-system,
+                BlinkMacSystemFont,
+                "Segoe UI",
+                sans-serif;
+
+            background: #f4f6f8;
+            color: #17202a;
+        }
+
+        .page {
+            width: min(
+                100%,
+                760px
+            );
+
+            margin: 0 auto;
+
+            padding:
+                16px
+                14px
+                60px;
+        }
+
+        h1 {
+            margin:
+                8px
+                0
+                4px;
+
+            font-size: 28px;
+        }
+
+        h2 {
+            margin-top: 0;
+            font-size: 21px;
+        }
+
+        h3 {
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            margin:
+                0
+                0
+                18px;
+
+            color: #667085;
+        }
+
+        .warning {
+            background: #fff3cd;
+
+            border:
+                1px
+                solid
+                #ffe69c;
+
+            border-radius: 12px;
+
+            padding: 12px;
+            margin-bottom: 16px;
+
+            font-size: 14px;
+            line-height: 1.4;
+        }
+
+        .card {
+            background: white;
+
+            border-radius: 16px;
+
+            padding: 18px;
+            margin-bottom: 16px;
+
+            box-shadow:
+                0
+                2px
+                10px
+                rgba(
+                    0,
+                    0,
+                    0,
+                    0.06
+                );
+        }
+
+        .grid {
+            display: grid;
+
+            grid-template-columns:
+                repeat(
+                    2,
+                    minmax(
+                        0,
+                        1fr
+                    )
+                );
+
+            gap: 12px;
+        }
+
+        .full {
+            grid-column:
+                1 / -1;
+        }
+
+        label {
+            display: block;
+
+            font-size: 13px;
+            font-weight: 600;
+
+            margin-bottom: 5px;
+        }
+
+        input,
+        select,
+        textarea {
+            width: 100%;
+
+            padding:
+                12px
+                11px;
+
+            border:
+                1px
+                solid
+                #d0d5dd;
+
+            border-radius: 10px;
+
+            font-size: 16px;
+
+            background: white;
+        }
+
+        textarea {
+            min-height: 72px;
+            resize: vertical;
+        }
+
+        input:focus,
+        select:focus,
+        textarea:focus {
+            outline: none;
+            border-color: #667085;
+        }
+
+        button {
+            width: 100%;
+
+            border: 0;
+            border-radius: 11px;
+
+            padding:
+                13px
+                16px;
+
+            font-size: 16px;
+            font-weight: 700;
+
+            cursor: pointer;
+
+            margin-top: 12px;
+        }
+
+        .primary {
+            background: #17202a;
+            color: white;
+        }
+
+        .secondary {
+            background: #e9ecef;
+            color: #17202a;
+        }
+
+        .danger {
+            background: #f8d7da;
+            color: #842029;
+        }
+
+        .small-button {
+            width: auto;
+
+            padding:
+                9px
+                12px;
+
+            margin-top: 0;
+
+            font-size: 14px;
+        }
+
+        .remove-button {
+            background: #f8d7da;
+            color: #842029;
+        }
+
+        button:disabled {
+            opacity: 0.55;
+            cursor: wait;
+        }
+
+        .status {
+            display: inline-block;
+
+            padding:
+                6px
+                10px;
+
+            border-radius: 999px;
+
+            background: #e9ecef;
+
+            font-size: 13px;
+            font-weight: 700;
+
+            margin-bottom: 10px;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .muted {
+            color: #667085;
+            font-size: 14px;
+        }
+
+        .mini {
+            color: #667085;
+            font-size: 12px;
+        }
+
+        .separator {
+            border: 0;
+
+            border-top:
+                1px
+                solid
+                #eaecf0;
+
+            margin:
+                18px
+                0;
+        }
+
+        .result-box {
+            background: #f8f9fa;
+
+            border-radius: 12px;
+
+            padding: 14px;
+            margin-top: 10px;
+        }
+
+        .result-row {
+            display: flex;
+
+            justify-content:
+                space-between;
+
+            gap: 12px;
+
+            padding:
+                7px
+                0;
+
+            border-bottom:
+                1px
+                solid
+                #eaecf0;
+        }
+
+        .result-row:last-child {
+            border-bottom: 0;
+        }
+
+        .result-value {
+            font-weight: 700;
+            text-align: right;
+        }
+
+        .success {
+            background: #d1e7dd;
+            color: #0f5132;
+
+            padding: 12px;
+
+            border-radius: 10px;
+
+            margin-bottom: 12px;
+        }
+
+        .error {
+            background: #f8d7da;
+            color: #842029;
+
+            padding: 12px;
+
+            border-radius: 10px;
+
+            margin-bottom: 12px;
+        }
+
+        .rapid-dose {
+            background: #f8f9fa;
+
+            border:
+                1px
+                solid
+                #eaecf0;
+
+            border-radius: 12px;
+
+            padding: 12px;
+            margin-bottom: 10px;
+        }
+
+        .rapid-dose-header {
+            display: flex;
+
+            align-items: center;
+            justify-content: space-between;
+
+            gap: 12px;
+
+            margin-bottom: 10px;
+        }
+
+        .rapid-dose-title {
+            font-weight: 700;
+            font-size: 14px;
+        }
+
+        @media (
+            max-width: 600px
+        ) {
+            .page {
+                padding:
+                    10px
+                    10px
+                    40px;
+            }
+
+            .card {
+                padding: 15px;
+                border-radius: 14px;
+            }
+
+            .grid {
+                grid-template-columns: 1fr;
+            }
+
+            .full {
+                grid-column: auto;
+            }
+
+            h1 {
+                font-size: 25px;
+            }
+
+            .rapid-dose-header {
+                align-items: flex-start;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="page">
+
+    <h1>
+        Diabetes Assistant
+    </h1>
+
+    <p class="subtitle">
+        Shadow V1.1
+    </p>
+
+    <div class="warning">
+
+        <strong>
+            Výzkumný shadow režim.
+        </strong>
+
+        <br>
+
+        Výstup systému je během rozhodování skrytý
+        a neslouží jako doporučení pro léčbu.
+
+        Shadow V1.1 je zatím určen pouze pro
+        situace bez plánovaného jídla.
+
+    </div>
+
+
+    <div
+        id="message"
+        class="hidden"
+    ></div>
+
+
+    <!-- AKTUALNI SESSION -->
+
+    <div class="card">
+
+        <h2>
+            Aktuální session
+        </h2>
+
+        <div
+            id="sessionStatus"
+            class="status"
+        >
+            Žádná aktivní session
+        </div>
+
+        <div
+            id="sessionIdBox"
+            class="muted"
+        >
+            Začni vytvořením nové situace.
+        </div>
+
+        <button
+            id="refreshButton"
+            class="secondary hidden"
+            type="button"
+        >
+            Obnovit stav
+        </button>
+
+        <button
+            id="newSessionButton"
+            class="danger hidden"
+            type="button"
+        >
+            Zahodit lokální session a začít novou
+        </button>
+
+    </div>
+
+
+    <!-- NOVA SITUACE -->
+
+    <div
+        id="situationCard"
+        class="card"
+    >
+
+        <h2>
+            1. Nová situace
+        </h2>
+
+        <div class="grid">
+
+
+            <div class="full">
+
+                <label for="decisionAt">
+                    Čas rozhodnutí
+                </label>
+
+                <input
+                    id="decisionAt"
+                    type="datetime-local"
+                >
+
+            </div>
+
+
+            <div>
+
+                <label for="glucose">
+                    Glykémie mmol/l
+                </label>
+
+                <input
+                    id="glucose"
+                    type="number"
+                    inputmode="decimal"
+                    step="0.1"
+                    min="0.1"
+                    max="40"
+                    placeholder="např. 10.4"
+                >
+
+            </div>
+
+
+            <div>
+
+                <label for="trend">
+                    Trend
+                </label>
+
+                <select id="trend">
+
+                    <option value="">
+                        —
+                    </option>
+
+                    <option value="RISING">
+                        Roste
+                    </option>
+
+                    <option value="STABLE">
+                        Stabilní
+                    </option>
+
+                    <option value="FALLING">
+                        Klesá
+                    </option>
+
+                </select>
+
+            </div>
+
+
+            <div>
+
+                <label for="delta15">
+                    Změna 15 min
+                </label>
+
+                <input
+                    id="delta15"
+                    type="number"
+                    inputmode="decimal"
+                    step="0.1"
+                    placeholder="např. +0.3"
+                >
+
+            </div>
+
+
+            <div>
+
+                <label for="delta30">
+                    Změna 30 min
+                </label>
+
+                <input
+                    id="delta30"
+                    type="number"
+                    inputmode="decimal"
+                    step="0.1"
+                >
+
+            </div>
+
+
+            <div>
+
+                <label for="delta60">
+                    Změna 60 min
+                </label>
+
+                <input
+                    id="delta60"
+                    type="number"
+                    inputmode="decimal"
+                    step="0.1"
+                >
+
+            </div>
+
+        </div>
+
+
+        <hr class="separator">
+
+
+        <h3>
+            Předchozí NovoRapid
+        </h3>
+
+        <p class="mini">
+            Zadej všechny relevantní dávky
+            z posledních přibližně 6 hodin.
+            Pokud žádná nebyla, nech seznam prázdný.
+        </p>
+
+
+        <div id="rapidDoseList">
+        </div>
+
+
+        <button
+            id="addRapidDoseButton"
+            class="secondary"
+            type="button"
+        >
+            + Přidat předchozí dávku
+        </button>
+
+
+        <hr class="separator">
+
+
+        <h3>
+            Tresiba
+        </h3>
+
+        <div class="grid">
+
+            <div>
+
+                <label for="tresibaUnits">
+                    Jednotky
+                </label>
+
+                <input
+                    id="tresibaUnits"
+                    type="number"
+                    inputmode="decimal"
+                    min="0"
+                    step="0.5"
+                >
+
+            </div>
+
+
+            <div>
+
+                <label for="tresibaAt">
+                    Čas poslední dávky
+                </label>
+
+                <input
+                    id="tresibaAt"
+                    type="datetime-local"
+                >
+
+            </div>
+
+        </div>
+
+
+        <hr class="separator">
+
+
+        <h3>
+            Poslední aktivita
+        </h3>
+
+        <p class="mini">
+            Volitelné.
+        </p>
+
+        <div class="grid">
+
+            <div>
+
+                <label for="activityType">
+                    Typ
+                </label>
+
+                <input
+                    id="activityType"
+                    type="text"
+                    placeholder="např. GYM"
+                >
+
+            </div>
+
+
+            <div>
+
+                <label for="activityIntensity">
+                    Intenzita
+                </label>
+
+                <select id="activityIntensity">
+
+                    <option value="">
+                        —
+                    </option>
+
+                    <option value="LOW">
+                        LOW
+                    </option>
+
+                    <option value="MEDIUM">
+                        MEDIUM
+                    </option>
+
+                    <option value="HIGH">
+                        HIGH
+                    </option>
+
+                </select>
+
+            </div>
+
+
+            <div>
+
+                <label for="activityStart">
+                    Začátek
+                </label>
+
+                <input
+                    id="activityStart"
+                    type="datetime-local"
+                >
+
+            </div>
+
+
+            <div>
+
+                <label for="activityEnd">
+                    Konec
+                </label>
+
+                <input
+                    id="activityEnd"
+                    type="datetime-local"
+                >
+
+            </div>
+
+        </div>
+
+
+        <div style="margin-top: 14px">
+
+            <label for="situationNote">
+                Poznámka
+            </label>
+
+            <textarea
+                id="situationNote"
+                placeholder="Volitelné"
+            ></textarea>
+
+        </div>
+
+
+        <button
+            id="createSessionButton"
+            class="primary"
+            type="button"
+        >
+            Uložit situaci
+        </button>
+
+    </div>
+
+
+    <!-- MUJ PLAN -->
+
+    <div
+        id="planCard"
+        class="card hidden"
+    >
+
+        <h2>
+            2. Můj plán
+        </h2>
+
+        <p class="muted">
+            Shadow už je v tuto chvíli vytvořen,
+            ale jeho výsledek zůstává skrytý.
+        </p>
+
+        <div class="grid">
+
+            <div>
+
+                <label for="strategy">
+                    Strategie
+                </label>
+
+                <select id="strategy">
+
+                    <option value="NONE">
+                        NONE
+                    </option>
+
+                    <option
+                        value="SINGLE"
+                        selected
+                    >
+                        SINGLE
+                    </option>
+
+                    <option value="SPLIT">
+                        SPLIT
+                    </option>
+
+                </select>
+
+            </div>
+
+
+            <div>
+
+                <label for="totalUnits">
+                    NovoRapid celkem
+                </label>
+
+                <input
+                    id="totalUnits"
+                    type="number"
+                    inputmode="decimal"
+                    step="0.5"
+                    min="0"
+                >
+
+            </div>
+
+
+            <div>
+
+                <label for="prebolus">
+                    Prebolus min
+                </label>
+
+                <input
+                    id="prebolus"
+                    type="number"
+                    inputmode="numeric"
+                    min="0"
+                    step="1"
+                    placeholder="volitelné"
+                >
+
+            </div>
+
+
+            <div
+                id="firstDoseBox"
+                class="hidden"
+            >
+
+                <label for="firstDose">
+                    První dávka
+                </label>
+
+                <input
+                    id="firstDose"
+                    type="number"
+                    inputmode="decimal"
+                    step="0.5"
+                    min="0"
+                >
+
+            </div>
+
+
+            <div
+                id="secondDoseBox"
+                class="hidden"
+            >
+
+                <label for="secondDose">
+                    Druhá dávka
+                </label>
+
+                <input
+                    id="secondDose"
+                    type="number"
+                    inputmode="decimal"
+                    step="0.5"
+                    min="0"
+                >
+
+            </div>
+
+
+            <div
+                id="secondDelayBox"
+                class="hidden"
+            >
+
+                <label for="secondDelay">
+                    Druhá dávka za min
+                </label>
+
+                <input
+                    id="secondDelay"
+                    type="number"
+                    inputmode="numeric"
+                    step="1"
+                    min="1"
+                >
+
+            </div>
+
+        </div>
+
+
+        <button
+            id="savePlanButton"
+            class="primary"
+            type="button"
+        >
+            Uložit můj plán
+        </button>
+
+    </div>
+
+
+    <!-- OUTCOME -->
+
+    <div
+        id="outcomeCard"
+        class="card hidden"
+    >
+
+        <h2>
+            3. Výsledek situace
+        </h2>
+
+        <p class="muted">
+            Doplň dostupné hodnoty po situaci.
+            Nemusíš mít nutně všechny horizonty.
+        </p>
+
+        <div class="grid">
+
+            <div>
+
+                <label for="baseline">
+                    Výchozí glykémie
+                </label>
+
+                <input
+                    id="baseline"
+                    type="number"
+                    inputmode="decimal"
+                    step="0.1"
+                >
+
+            </div>
+
+
+            <div>
+
+                <label for="g30">
+                    +30 min
+                </label>
+
+                <input
+                    id="g30"
+                    type="number"
+                    inputmode="decimal"
+                    step="0.1"
+                >
+
+            </div>
+
+
+            <div>
+
+                <label for="g60">
+                    +60 min
+                </label>
+
+                <input
+                    id="g60"
+                    type="number"
+                    inputmode="decimal"
+                    step="0.1"
+                >
+
+            </div>
+
+
+            <div>
+
+                <label for="g90">
+                    +90 min
+                </label>
+
+                <input
+                    id="g90"
+                    type="number"
+                    inputmode="decimal"
+                    step="0.1"
+                >
+
+            </div>
+
+
+            <div>
+
+                <label for="g120">
+                    +120 min
+                </label>
+
+                <input
+                    id="g120"
+                    type="number"
+                    inputmode="decimal"
+                    step="0.1"
+                >
+
+            </div>
+
+
+            <div>
+
+                <label for="g180">
+                    +180 min
+                </label>
+
+                <input
+                    id="g180"
+                    type="number"
+                    inputmode="decimal"
+                    step="0.1"
+                >
+
+            </div>
+
+        </div>
+
+
+        <div style="margin-top: 14px">
+
+            <label for="outcomeNote">
+                Poznámka
+            </label>
+
+            <textarea
+                id="outcomeNote"
+                placeholder="Volitelné"
+            ></textarea>
+
+        </div>
+
+
+        <button
+            id="saveOutcomeButton"
+            class="primary"
+            type="button"
+        >
+            Dokončit situaci
+        </button>
+
+    </div>
+
+
+    <!-- VYSLEDEK -->
+
+    <div
+        id="resultCard"
+        class="card hidden"
+    >
+
+        <h2>
+            4. Výsledek experimentu
+        </h2>
+
+        <div
+            id="resultContent"
+        ></div>
+
+        <button
+            id="finishButton"
+            class="primary"
+            type="button"
+        >
+            Nová situace
+        </button>
+
+    </div>
+
+</div>
+
+
+<script>
+
+    const LOCAL_USER_ID =
+        "d78bf688-ec52-495c-b390-9e6747fedb47";
+
+    const CLOUD_USER_ID =
+        "a55893d8-7f81-4ff0-9393-3e731cdf431b";
+
+    const storageKey =
+        "diabetesShadowSessionId";
+
+
+    const byId = (
+        id
+    ) => document.getElementById(
+        id
+    );
+
+
+    function isCloud() {
+        return (
+            window.location.hostname
+            .includes(
+                "onrender.com"
+            )
+        );
+    }
+
+
+    function currentUserId() {
+        return (
+            isCloud()
+            ? CLOUD_USER_ID
+            : LOCAL_USER_ID
+        );
+    }
+
+
+    function localDateTimeValue(
+        date = new Date()
+    ) {
+        const offset =
+            date.getTimezoneOffset();
+
+        const local =
+            new Date(
+                date.getTime()
+                - offset
+                * 60
+                * 1000
+            );
+
+        return (
+            local
+            .toISOString()
+            .slice(
+                0,
+                16
+            )
+        );
+    }
+
+
+    function toIso(
+        value
+    ) {
+        if (!value) {
+            return null;
+        }
+
+        return (
+            new Date(
+                value
+            )
+            .toISOString()
+        );
+    }
+
+
+    function numberOrNull(
+        value
+    ) {
+        if (
+            value === null
+            || value === undefined
+            || String(
+                value
+            ).trim() === ""
+        ) {
+            return null;
+        }
+
+        const number =
+            Number(
+                value
+            );
+
+        if (
+            Number.isNaN(
+                number
+            )
+        ) {
+            return null;
+        }
+
+        return number;
+    }
+
+
+    function intOrNull(
+        value
+    ) {
+        const result =
+            numberOrNull(
+                value
+            );
+
+        if (
+            result === null
+        ) {
+            return null;
+        }
+
+        return Math.round(
+            result
+        );
+    }
+
+
+    function showMessage(
+        text,
+        type = "error"
+    ) {
+        const message =
+            byId(
+                "message"
+            );
+
+        message.textContent =
+            text;
+
+        message.className =
+            type;
+
+        window.scrollTo({
+            top: 0,
+            behavior: "smooth"
+        });
+    }
+
+
+    function clearMessage() {
+        const message =
+            byId(
+                "message"
+            );
+
+        message.textContent = "";
+
+        message.className =
+            "hidden";
+    }
+
+
+    function setBusy(
+        button,
+        busy
+    ) {
+        button.disabled =
+            busy;
+    }
+
+
+    async function requestJson(
+        url,
+        options = {}
+    ) {
+        const response =
+            await fetch(
+                url,
+                {
+                    headers: {
+                        "Content-Type":
+                            "application/json",
+
+                        ...(
+                            options.headers
+                            || {}
+                        )
+                    },
+
+                    ...options
+                }
+            );
+
+        let data = null;
+
+        try {
+            data =
+                await response.json();
+        }
+
+        catch {
+            data = null;
+        }
+
+        if (
+            !response.ok
+        ) {
+            let detail =
+                (
+                    data
+                    && data.detail
+                )
+                ? data.detail
+                : (
+                    "HTTP "
+                    + response.status
+                );
+
+            if (
+                Array.isArray(
+                    detail
+                )
+            ) {
+                detail =
+                    detail
+                    .map(
+                        item =>
+                            item.msg
+                    )
+                    .join(
+                        ", "
+                    );
+            }
+
+            throw new Error(
+                detail
+            );
+        }
+
+        return data;
+    }
+
+
+    function resetSections() {
+        byId(
+            "situationCard"
+        ).classList.add(
+            "hidden"
+        );
+
+        byId(
+            "planCard"
+        ).classList.add(
+            "hidden"
+        );
+
+        byId(
+            "outcomeCard"
+        ).classList.add(
+            "hidden"
+        );
+
+        byId(
+            "resultCard"
+        ).classList.add(
+            "hidden"
+        );
+    }
+
+
+    function showNoSession() {
+        resetSections();
+
+        byId(
+            "situationCard"
+        ).classList.remove(
+            "hidden"
+        );
+
+        byId(
+            "sessionStatus"
+        ).textContent =
+            "Žádná aktivní session";
+
+        byId(
+            "sessionIdBox"
+        ).textContent =
+            "Začni vytvořením nové situace.";
+
+        byId(
+            "refreshButton"
+        ).classList.add(
+            "hidden"
+        );
+
+        byId(
+            "newSessionButton"
+        ).classList.add(
+            "hidden"
+        );
+    }
+
+
+    function showSessionHeader(
+        session
+    ) {
+        byId(
+            "sessionStatus"
+        ).textContent =
+            session.status;
+
+        byId(
+            "sessionIdBox"
+        ).textContent =
+            "Session: "
+            + session.id;
+
+        byId(
+            "refreshButton"
+        ).classList.remove(
+            "hidden"
+        );
+
+        byId(
+            "newSessionButton"
+        ).classList.remove(
+            "hidden"
+        );
+    }
+
+
+    function addRapidDoseRow(
+        units = "",
+        datetime = ""
+    ) {
+        const list =
+            byId(
+                "rapidDoseList"
+            );
+
+        const wrapper =
+            document.createElement(
+                "div"
+            );
+
+        wrapper.className =
+            "rapid-dose";
+
+        wrapper.innerHTML = `
+
+            <div class="rapid-dose-header">
+
+                <div class="rapid-dose-title">
+                    Předchozí dávka
+                </div>
+
+                <button
+                    type="button"
+                    class="
+                        small-button
+                        remove-button
+                        removeRapidDoseButton
+                    "
+                >
+                    Odebrat
+                </button>
+
+            </div>
+
+            <div class="grid">
+
+                <div>
+
+                    <label>
+                        Jednotky
+                    </label>
+
+                    <input
+                        class="rapidUnits"
+                        type="number"
+                        inputmode="decimal"
+                        min="0"
+                        step="0.5"
+                        value="${units}"
+                    >
+
+                </div>
+
+
+                <div>
+
+                    <label>
+                        Čas
+                    </label>
+
+                    <input
+                        class="rapidAt"
+                        type="datetime-local"
+                        value="${datetime}"
+                    >
+
+                </div>
+
+            </div>
+        `;
+
+
+        wrapper
+        .querySelector(
+            ".removeRapidDoseButton"
+        )
+        .addEventListener(
+            "click",
+            () => {
+                wrapper.remove();
+            }
+        );
+
+
+        list.appendChild(
+            wrapper
+        );
+    }
+
+
+    function collectRapidDoses() {
+        const rows =
+            document.querySelectorAll(
+                ".rapid-dose"
+            );
+
+        const doses = [];
+
+        for (
+            const row
+            of rows
+        ) {
+            const units =
+                numberOrNull(
+                    row
+                    .querySelector(
+                        ".rapidUnits"
+                    )
+                    .value
+                );
+
+            const administeredAt =
+                toIso(
+                    row
+                    .querySelector(
+                        ".rapidAt"
+                    )
+                    .value
+                );
+
+
+            const completelyEmpty =
+                (
+                    units === null
+                    && administeredAt === null
+                );
+
+
+            if (
+                completelyEmpty
+            ) {
+                continue;
+            }
+
+
+            if (
+                units === null
+                || administeredAt === null
+            ) {
+                throw new Error(
+                    "U každé předchozí dávky "
+                    + "NovoRapidu vyplň jednotky "
+                    + "i čas."
+                );
+            }
+
+
+            doses.push({
+                units:
+                    units,
+
+                administered_at:
+                    administeredAt
+            });
+        }
+
+
+        doses.sort(
+            (
+                a,
+                b
+            ) =>
+                new Date(
+                    a.administered_at
+                )
+                -
+                new Date(
+                    b.administered_at
+                )
+        );
+
+
+        return doses;
+    }
+
+
+    function displayResult(
+        session
+    ) {
+        const user =
+            session.comparison
+            ?.user;
+
+        const system =
+            session.comparison
+            ?.system;
+
+        const outcome =
+            session.comparison
+            ?.outcome;
+
+
+        let systemValue =
+            "—";
+
+        if (
+            system
+            ?.status
+            === "PLAN"
+        ) {
+            systemValue =
+                system
+                .total_novorapid_units
+                + " U";
+        }
+
+        else if (
+            system
+            ?.status
+            === "ABSTAIN"
+        ) {
+            systemValue =
+                "ABSTAIN";
+        }
+
+
+        let difference =
+            session.comparison
+            ?.absolute_dose_difference;
+
+        if (
+            difference === null
+            || difference
+            === undefined
+        ) {
+            difference = "—";
+        }
+
+        else {
+            difference +=
+                " U";
+        }
+
+
+        let abstainReason = "";
+
+        if (
+            session.system_shadow
+            ?.status
+            === "ABSTAIN"
+        ) {
+            abstainReason = `
+
+                <div class="result-row">
+
+                    <span>
+                        Důvod ABSTAIN
+                    </span>
+
+                    <span class="result-value">
+                        ${
+                            session
+                            .system_shadow
+                            .abstain_reason
+                            || "—"
+                        }
+                    </span>
+
+                </div>
+            `;
+        }
+
+
+        byId(
+            "resultContent"
+        ).innerHTML = `
+
+            <div class="success">
+
+                Session byla dokončena.
+                Shadow je nyní odhalen.
+
+            </div>
+
+
+            <div class="result-box">
+
+                <div class="result-row">
+
+                    <span>
+                        Můj plán
+                    </span>
+
+                    <span class="result-value">
+
+                        ${
+                            user
+                            ?.total_novorapid_units
+                            ?? "—"
+                        }
+
+                        ${
+                            user
+                            ?.total_novorapid_units
+                            !== null
+                            && user
+                            ?.total_novorapid_units
+                            !== undefined
+                            ? " U"
+                            : ""
+                        }
+
+                    </span>
+
+                </div>
+
+
+                <div class="result-row">
+
+                    <span>
+                        Shadow
+                    </span>
+
+                    <span class="result-value">
+                        ${systemValue}
+                    </span>
+
+                </div>
+
+
+                ${abstainReason}
+
+
+                <div class="result-row">
+
+                    <span>
+                        Model
+                    </span>
+
+                    <span class="result-value">
+
+                        ${
+                            system
+                            ?.model_version
+                            || "—"
+                        }
+
+                    </span>
+
+                </div>
+
+
+                <div class="result-row">
+
+                    <span>
+                        Support
+                    </span>
+
+                    <span class="result-value">
+
+                        ${
+                            system
+                            ?.support_count
+                            ?? "—"
+                        }
+
+                    </span>
+
+                </div>
+
+
+                <div class="result-row">
+
+                    <span>
+                        Nejsilnější evidence
+                    </span>
+
+                    <span class="result-value">
+
+                        ${
+                            system
+                            ?.strongest_evidence
+                            ?? "—"
+                        }
+
+                    </span>
+
+                </div>
+
+
+                <div class="result-row">
+
+                    <span>
+                        Rozdíl dávek
+                    </span>
+
+                    <span class="result-value">
+                        ${difference}
+                    </span>
+
+                </div>
+
+            </div>
+
+
+            <h3>
+                Outcome
+            </h3>
+
+
+            <div class="result-box">
+
+                <div class="result-row">
+
+                    <span>
+                        Quality
+                    </span>
+
+                    <span class="result-value">
+
+                        ${
+                            outcome
+                            ?.quality_score
+                            ?? "—"
+                        }
+
+                    </span>
+
+                </div>
+
+
+                <div class="result-row">
+
+                    <span>
+                        Status
+                    </span>
+
+                    <span class="result-value">
+
+                        ${
+                            outcome
+                            ?.quality_status
+                            || "—"
+                        }
+
+                    </span>
+
+                </div>
+
+
+                <div class="result-row">
+
+                    <span>
+                        Confidence
+                    </span>
+
+                    <span class="result-value">
+
+                        ${
+                            outcome
+                            ?.confidence
+                            ?? "—"
+                        }
+
+                    </span>
+
+                </div>
+
+
+                <div class="result-row">
+
+                    <span>
+                        Hypo
+                    </span>
+
+                    <span class="result-value">
+
+                        ${
+                            outcome
+                            ?.low_detected
+                            ? "ANO"
+                            : "NE"
+                        }
+
+                    </span>
+
+                </div>
+
+
+                <div class="result-row">
+
+                    <span>
+                        Hyper
+                    </span>
+
+                    <span class="result-value">
+
+                        ${
+                            outcome
+                            ?.high_detected
+                            ? "ANO"
+                            : "NE"
+                        }
+
+                    </span>
+
+                </div>
+
+            </div>
+
+
+            <p class="mini">
+
+                Toto je pouze retrospektivní
+                experimentální porovnání.
+
+                Výsledek neurčuje,
+                která alternativa by byla
+                klinicky správná.
+
+            </p>
+        `;
+    }
+
+
+    function renderSession(
+        session
+    ) {
+        resetSections();
+
+        showSessionHeader(
+            session
+        );
+
+
+        if (
+            session.status
+            === "WAITING_USER_PLAN"
+        ) {
+            byId(
+                "planCard"
+            ).classList.remove(
+                "hidden"
+            );
+
+            return;
+        }
+
+
+        if (
+            session.status
+            === "WAITING_OUTCOME"
+        ) {
+            byId(
+                "outcomeCard"
+            ).classList.remove(
+                "hidden"
+            );
+
+
+            if (
+                !byId(
+                    "baseline"
+                ).value
+            ) {
+                const baseline =
+                    session
+                    .input_snapshot
+                    ?.glucose
+                    ?.current;
+
+                if (
+                    baseline !== null
+                    && baseline !== undefined
+                ) {
+                    byId(
+                        "baseline"
+                    ).value =
+                        baseline;
+                }
+            }
+
+            return;
+        }
+
+
+        if (
+            session.status
+            === "COMPLETED"
+        ) {
+            byId(
+                "resultCard"
+            ).classList.remove(
+                "hidden"
+            );
+
+            displayResult(
+                session
+            );
+
+            return;
+        }
+
+
+        showMessage(
+            "Neočekávaný stav session: "
+            + session.status
+        );
+    }
+
+
+    async function loadSession() {
+        clearMessage();
+
+        const sessionId =
+            localStorage.getItem(
+                storageKey
+            );
+
+
+        if (
+            !sessionId
+        ) {
+            showNoSession();
+            return;
+        }
+
+
+        try {
+            const session =
+                await requestJson(
+                    "/decision-sessions/"
+                    + sessionId
+                );
+
+            renderSession(
+                session
+            );
+        }
+
+        catch (
+            error
+        ) {
+            showMessage(
+                "Session se nepodařilo načíst: "
+                + error.message
+            );
+        }
+    }
+
+
+    async function createSession() {
+        clearMessage();
+
+        const button =
+            byId(
+                "createSessionButton"
+            );
+
+        setBusy(
+            button,
+            true
+        );
+
+
+        try {
+            const glucose =
+                numberOrNull(
+                    byId(
+                        "glucose"
+                    ).value
+                );
+
+
+            if (
+                glucose === null
+            ) {
+                throw new Error(
+                    "Vyplň aktuální glykémii."
+                );
+            }
+
+
+            const decisionAt =
+                toIso(
+                    byId(
+                        "decisionAt"
+                    ).value
+                );
+
+
+            if (
+                !decisionAt
+            ) {
+                throw new Error(
+                    "Vyplň čas rozhodnutí."
+                );
+            }
+
+
+            const recentNovoRapid =
+                collectRapidDoses();
+
+
+            const tresibaUnits =
+                numberOrNull(
+                    byId(
+                        "tresibaUnits"
+                    ).value
+                );
+
+            const tresibaAt =
+                toIso(
+                    byId(
+                        "tresibaAt"
+                    ).value
+                );
+
+
+            let tresiba =
+                null;
+
+
+            if (
+                tresibaUnits !== null
+                || tresibaAt !== null
+            ) {
+                if (
+                    tresibaUnits === null
+                    || tresibaAt === null
+                ) {
+                    throw new Error(
+                        "U Tresiby vyplň "
+                        + "jednotky i čas."
+                    );
+                }
+
+                tresiba = {
+                    units:
+                        tresibaUnits,
+
+                    administered_at:
+                        tresibaAt
+                };
+            }
+
+
+            const activities =
+                [];
+
+
+            const activityType =
+                byId(
+                    "activityType"
+                ).value.trim();
+
+
+            const activityIntensity =
+                byId(
+                    "activityIntensity"
+                ).value;
+
+
+            const activityStart =
+                toIso(
+                    byId(
+                        "activityStart"
+                    ).value
+                );
+
+
+            const activityEnd =
+                toIso(
+                    byId(
+                        "activityEnd"
+                    ).value
+                );
+
+
+            if (
+                activityType
+                || activityIntensity
+                || activityStart
+                || activityEnd
+            ) {
+                if (
+                    !activityType
+                    || !activityIntensity
+                    || !activityStart
+                    || !activityEnd
+                ) {
+                    throw new Error(
+                        "U aktivity vyplň "
+                        + "typ, intenzitu, "
+                        + "začátek i konec."
+                    );
+                }
+
+
+                const duration =
+                    Math.round(
+                        (
+                            new Date(
+                                activityEnd
+                            )
+                            -
+                            new Date(
+                                activityStart
+                            )
+                        )
+                        / 60000
+                    );
+
+
+                if (
+                    duration <= 0
+                ) {
+                    throw new Error(
+                        "Konec aktivity musí být "
+                        + "po začátku."
+                    );
+                }
+
+
+                activities.push({
+                    activity_type:
+                        activityType,
+
+                    intensity:
+                        activityIntensity,
+
+                    duration_minutes:
+                        duration,
+
+                    started_at:
+                        activityStart,
+
+                    ended_at:
+                        activityEnd
+                });
+            }
+
+
+            const payload = {
+
+                user_id:
+                    currentUserId(),
+
+                decision_at:
+                    decisionAt,
+
+                glucose: {
+
+                    current:
+                        glucose,
+
+                    delta_15m:
+                        numberOrNull(
+                            byId(
+                                "delta15"
+                            ).value
+                        ),
+
+                    delta_30m:
+                        numberOrNull(
+                            byId(
+                                "delta30"
+                            ).value
+                        ),
+
+                    delta_60m:
+                        numberOrNull(
+                            byId(
+                                "delta60"
+                            ).value
+                        ),
+
+                    trend:
+                        byId(
+                            "trend"
+                        ).value
+                        || null
+                },
+
+                planned_meal:
+                    null,
+
+                recent_novorapid:
+                    recentNovoRapid,
+
+                tresiba:
+                    tresiba,
+
+                activities:
+                    activities,
+
+                note:
+                    byId(
+                        "situationNote"
+                    ).value.trim()
+                    || null
+            };
+
+
+            const session =
+                await requestJson(
+                    "/decision-sessions",
+                    {
+                        method:
+                            "POST",
+
+                        body:
+                            JSON.stringify(
+                                payload
+                            )
+                    }
+                );
+
+
+            localStorage.setItem(
+                storageKey,
+                session.id
+            );
+
+
+            showMessage(
+                "Situace uložena. "
+                + "Shadow je nyní skrytě vytvořen.",
+                "success"
+            );
+
+
+            renderSession(
+                session
+            );
+        }
+
+        catch (
+            error
+        ) {
+            showMessage(
+                error.message
+            );
+        }
+
+        finally {
+            setBusy(
+                button,
+                false
+            );
+        }
+    }
+
+
+    function updatePlanFields() {
+        const strategy =
+            byId(
+                "strategy"
+            ).value;
+
+
+        const split =
+            strategy
+            === "SPLIT";
+
+
+        byId(
+            "firstDoseBox"
+        ).classList.toggle(
+            "hidden",
+            !split
+        );
+
+
+        byId(
+            "secondDoseBox"
+        ).classList.toggle(
+            "hidden",
+            !split
+        );
+
+
+        byId(
+            "secondDelayBox"
+        ).classList.toggle(
+            "hidden",
+            !split
+        );
+
+
+        if (
+            strategy
+            === "NONE"
+        ) {
+            byId(
+                "totalUnits"
+            ).value =
+                "0";
+        }
+    }
+
+
+    async function savePlan() {
+        clearMessage();
+
+        const button =
+            byId(
+                "savePlanButton"
+            );
+
+        setBusy(
+            button,
+            true
+        );
+
+
+        try {
+            const sessionId =
+                localStorage.getItem(
+                    storageKey
+                );
+
+
+            if (
+                !sessionId
+            ) {
+                throw new Error(
+                    "Chybí session ID."
+                );
+            }
+
+
+            const strategy =
+                byId(
+                    "strategy"
+                ).value;
+
+
+            let total =
+                numberOrNull(
+                    byId(
+                        "totalUnits"
+                    ).value
+                );
+
+
+            let first =
+                null;
+
+            let second =
+                null;
+
+            let delay =
+                null;
+
+
+            if (
+                strategy
+                === "NONE"
+            ) {
+                total = 0;
+            }
+
+
+            else if (
+                strategy
+                === "SINGLE"
+            ) {
+                if (
+                    total === null
+                    || total <= 0
+                ) {
+                    throw new Error(
+                        "Vyplň celkovou dávku."
+                    );
+                }
+
+                first =
+                    total;
+            }
+
+
+            else if (
+                strategy
+                === "SPLIT"
+            ) {
+                first =
+                    numberOrNull(
+                        byId(
+                            "firstDose"
+                        ).value
+                    );
+
+
+                second =
+                    numberOrNull(
+                        byId(
+                            "secondDose"
+                        ).value
+                    );
+
+
+                delay =
+                    intOrNull(
+                        byId(
+                            "secondDelay"
+                        ).value
+                    );
+
+
+                if (
+                    first === null
+                    || second === null
+                    || delay === null
+                ) {
+                    throw new Error(
+                        "U SPLIT vyplň obě "
+                        + "dávky i čas druhé dávky."
+                    );
+                }
+
+
+                total =
+                    first
+                    + second;
+
+
+                byId(
+                    "totalUnits"
+                ).value =
+                    total;
+            }
+
+
+            const payload = {
+
+                strategy:
+                    strategy,
+
+                total_novorapid_units:
+                    total,
+
+                prebolus_minutes:
+                    intOrNull(
+                        byId(
+                            "prebolus"
+                        ).value
+                    ),
+
+                first_dose_units:
+                    first,
+
+                second_dose_units:
+                    second,
+
+                second_dose_delay_minutes:
+                    delay
+            };
+
+
+            await requestJson(
+                "/decision-sessions/"
+                + sessionId
+                + "/user-plan",
+                {
+                    method:
+                        "POST",
+
+                    body:
+                        JSON.stringify(
+                            payload
+                        )
+                }
+            );
+
+
+            showMessage(
+                "Tvůj plán byl uložen. "
+                + "Shadow zůstává skrytý.",
+                "success"
+            );
+
+
+            await loadSession();
+        }
+
+        catch (
+            error
+        ) {
+            showMessage(
+                error.message
+            );
+        }
+
+        finally {
+            setBusy(
+                button,
+                false
+            );
+        }
+    }
+
+
+    async function saveOutcome() {
+        clearMessage();
+
+        const button =
+            byId(
+                "saveOutcomeButton"
+            );
+
+        setBusy(
+            button,
+            true
+        );
+
+
+        try {
+            const sessionId =
+                localStorage.getItem(
+                    storageKey
+                );
+
+
+            if (
+                !sessionId
+            ) {
+                throw new Error(
+                    "Chybí session ID."
+                );
+            }
+
+
+            const baseline =
+                numberOrNull(
+                    byId(
+                        "baseline"
+                    ).value
+                );
+
+
+            if (
+                baseline === null
+            ) {
+                throw new Error(
+                    "Vyplň výchozí glykémii."
+                );
+            }
+
+
+            const values = {
+
+                glucose_30m:
+                    numberOrNull(
+                        byId(
+                            "g30"
+                        ).value
+                    ),
+
+                glucose_60m:
+                    numberOrNull(
+                        byId(
+                            "g60"
+                        ).value
+                    ),
+
+                glucose_90m:
+                    numberOrNull(
+                        byId(
+                            "g90"
+                        ).value
+                    ),
+
+                glucose_120m:
+                    numberOrNull(
+                        byId(
+                            "g120"
+                        ).value
+                    ),
+
+                glucose_180m:
+                    numberOrNull(
+                        byId(
+                            "g180"
+                        ).value
+                    )
+            };
+
+
+            if (
+                Object.values(
+                    values
+                )
+                .every(
+                    value =>
+                        value === null
+                )
+            ) {
+                throw new Error(
+                    "Vyplň alespoň jednu "
+                    + "následnou glykémii."
+                );
+            }
+
+
+            const payload = {
+
+                baseline_glucose:
+                    baseline,
+
+                ...values,
+
+                evaluated_at:
+                    new Date()
+                    .toISOString(),
+
+                note:
+                    byId(
+                        "outcomeNote"
+                    ).value.trim()
+                    || null
+            };
+
+
+            const session =
+                await requestJson(
+                    "/decision-sessions/"
+                    + sessionId
+                    + "/outcome",
+                    {
+                        method:
+                            "POST",
+
+                        body:
+                            JSON.stringify(
+                                payload
+                            )
+                    }
+                );
+
+
+            showMessage(
+                "Situace dokončena. "
+                + "Shadow byl odhalen.",
+                "success"
+            );
+
+
+            renderSession(
+                session
+            );
+        }
+
+        catch (
+            error
+        ) {
+            showMessage(
+                error.message
+            );
+        }
+
+        finally {
+            setBusy(
+                button,
+                false
+            );
+        }
+    }
+
+
+    function clearSituationForm() {
+        byId(
+            "decisionAt"
+        ).value =
+            localDateTimeValue();
+
+
+        byId(
+            "glucose"
+        ).value = "";
+
+
+        byId(
+            "trend"
+        ).value = "";
+
+
+        byId(
+            "delta15"
+        ).value = "";
+
+
+        byId(
+            "delta30"
+        ).value = "";
+
+
+        byId(
+            "delta60"
+        ).value = "";
+
+
+        byId(
+            "rapidDoseList"
+        ).innerHTML = "";
+
+
+        byId(
+            "tresibaUnits"
+        ).value = "";
+
+
+        byId(
+            "tresibaAt"
+        ).value = "";
+
+
+        byId(
+            "activityType"
+        ).value = "";
+
+
+        byId(
+            "activityIntensity"
+        ).value = "";
+
+
+        byId(
+            "activityStart"
+        ).value = "";
+
+
+        byId(
+            "activityEnd"
+        ).value = "";
+
+
+        byId(
+            "situationNote"
+        ).value = "";
+    }
+
+
+    function clearOutcomeForm() {
+        byId(
+            "baseline"
+        ).value = "";
+
+        byId(
+            "g30"
+        ).value = "";
+
+        byId(
+            "g60"
+        ).value = "";
+
+        byId(
+            "g90"
+        ).value = "";
+
+        byId(
+            "g120"
+        ).value = "";
+
+        byId(
+            "g180"
+        ).value = "";
+
+        byId(
+            "outcomeNote"
+        ).value = "";
+    }
+
+
+    function clearPlanForm() {
+        byId(
+            "strategy"
+        ).value =
+            "SINGLE";
+
+        byId(
+            "totalUnits"
+        ).value = "";
+
+        byId(
+            "prebolus"
+        ).value = "";
+
+        byId(
+            "firstDose"
+        ).value = "";
+
+        byId(
+            "secondDose"
+        ).value = "";
+
+        byId(
+            "secondDelay"
+        ).value = "";
+
+        updatePlanFields();
+    }
+
+
+    function clearLocalSession() {
+        localStorage.removeItem(
+            storageKey
+        );
+
+        clearMessage();
+
+        clearSituationForm();
+        clearPlanForm();
+        clearOutcomeForm();
+
+        showNoSession();
+    }
+
+
+    byId(
+        "createSessionButton"
+    ).addEventListener(
+        "click",
+        createSession
+    );
+
+
+    byId(
+        "savePlanButton"
+    ).addEventListener(
+        "click",
+        savePlan
+    );
+
+
+    byId(
+        "saveOutcomeButton"
+    ).addEventListener(
+        "click",
+        saveOutcome
+    );
+
+
+    byId(
+        "strategy"
+    ).addEventListener(
+        "change",
+        updatePlanFields
+    );
+
+
+    byId(
+        "refreshButton"
+    ).addEventListener(
+        "click",
+        loadSession
+    );
+
+
+    byId(
+        "addRapidDoseButton"
+    ).addEventListener(
+        "click",
+        () => {
+            addRapidDoseRow();
+        }
+    );
+
+
+    byId(
+        "newSessionButton"
+    ).addEventListener(
+        "click",
+        () => {
+            if (
+                confirm(
+                    "Opravdu chceš zahodit "
+                    + "lokální odkaz na tuto session?"
+                )
+            ) {
+                clearLocalSession();
+            }
+        }
+    );
+
+
+    byId(
+        "finishButton"
+    ).addEventListener(
+        "click",
+        clearLocalSession
+    );
+
+
+    byId(
+        "decisionAt"
+    ).value =
+        localDateTimeValue();
+
+
+    updatePlanFields();
+
+    loadSession();
+
+</script>
+
+</body>
+</html>
