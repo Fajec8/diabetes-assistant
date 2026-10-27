@@ -2,7 +2,6 @@
 <html lang="cs">
 <head>
     <meta charset="UTF-8">
-
     <meta
         name="viewport"
         content="width=device-width, initial-scale=1"
@@ -17,7 +16,6 @@
 
         body {
             margin: 0;
-
             font-family:
                 -apple-system,
                 BlinkMacSystemFont,
@@ -29,25 +27,13 @@
         }
 
         .page {
-            width: min(
-                100%,
-                760px
-            );
-
+            width: min(100%, 760px);
             margin: 0 auto;
-
-            padding:
-                16px
-                14px
-                60px;
+            padding: 16px 14px 60px;
         }
 
         h1 {
-            margin:
-                8px
-                0
-                4px;
-
+            margin: 8px 0 4px;
             font-size: 28px;
         }
 
@@ -57,102 +43,81 @@
         }
 
         h3 {
-            margin-bottom: 10px;
+            margin-bottom: 8px;
         }
 
         .subtitle {
-            margin:
-                0
-                0
-                18px;
-
+            margin: 0 0 18px;
             color: #667085;
         }
 
         .warning {
             background: #fff3cd;
-
-            border:
-                1px
-                solid
-                #ffe69c;
-
+            border: 1px solid #ffe69c;
             border-radius: 12px;
-
             padding: 12px;
             margin-bottom: 16px;
-
             font-size: 14px;
-            line-height: 1.4;
+            line-height: 1.45;
+        }
+
+        .info {
+            background: #e7f1ff;
+            border: 1px solid #b6d4fe;
+            border-radius: 12px;
+            padding: 12px;
+            margin: 12px 0;
+            font-size: 14px;
+            line-height: 1.45;
         }
 
         .card {
             background: white;
-
             border-radius: 16px;
-
             padding: 18px;
             margin-bottom: 16px;
 
             box-shadow:
-                0
-                2px
-                10px
-                rgba(
-                    0,
-                    0,
-                    0,
-                    0.06
-                );
+                0 2px 10px
+                rgba(0, 0, 0, 0.06);
         }
 
         .grid {
             display: grid;
-
             grid-template-columns:
-                repeat(
-                    2,
-                    minmax(
-                        0,
-                        1fr
-                    )
-                );
-
+                repeat(2, minmax(0, 1fr));
             gap: 12px;
         }
 
         .full {
-            grid-column:
-                1 / -1;
+            grid-column: 1 / -1;
         }
 
         label {
             display: block;
-
             font-size: 13px;
             font-weight: 600;
-
             margin-bottom: 5px;
+        }
+
+        .help {
+            margin-top: 4px;
+            font-size: 12px;
+            color: #667085;
+            line-height: 1.35;
         }
 
         input,
         select,
         textarea {
             width: 100%;
-
-            padding:
-                12px
-                11px;
+            padding: 12px 11px;
 
             border:
-                1px
-                solid
-                #d0d5dd;
+                1px solid #d0d5dd;
 
             border-radius: 10px;
-
             font-size: 16px;
-
             background: white;
         }
 
@@ -170,19 +135,12 @@
 
         button {
             width: 100%;
-
             border: 0;
             border-radius: 11px;
-
-            padding:
-                13px
-                16px;
-
+            padding: 13px 16px;
             font-size: 16px;
             font-weight: 700;
-
             cursor: pointer;
-
             margin-top: 12px;
         }
 
@@ -203,13 +161,8 @@
 
         .small-button {
             width: auto;
-
-            padding:
-                9px
-                12px;
-
+            padding: 9px 12px;
             margin-top: 0;
-
             font-size: 14px;
         }
 
@@ -225,18 +178,11 @@
 
         .status {
             display: inline-block;
-
-            padding:
-                6px
-                10px;
-
+            padding: 6px 10px;
             border-radius: 999px;
-
             background: #e9ecef;
-
             font-size: 13px;
             font-weight: 700;
-
             margin-bottom: 10px;
         }
 
@@ -256,42 +202,79 @@
 
         .separator {
             border: 0;
-
             border-top:
-                1px
-                solid
-                #eaecf0;
+                1px solid #eaecf0;
 
-            margin:
-                18px
-                0;
+            margin: 20px 0;
+        }
+
+        .rapid-dose {
+            background: #f8f9fa;
+            border: 1px solid #eaecf0;
+            border-radius: 12px;
+            padding: 12px;
+            margin-bottom: 10px;
+        }
+
+        .rapid-dose-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 10px;
+        }
+
+        .rapid-dose-title {
+            font-weight: 700;
+            font-size: 14px;
+        }
+
+        .checkbox-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .checkbox-row input {
+            width: auto;
+            transform: scale(1.25);
+        }
+
+        .checkbox-row label {
+            margin: 0;
+            font-size: 15px;
+        }
+
+        .success {
+            background: #d1e7dd;
+            color: #0f5132;
+            padding: 12px;
+            border-radius: 10px;
+            margin-bottom: 12px;
+        }
+
+        .error {
+            background: #f8d7da;
+            color: #842029;
+            padding: 12px;
+            border-radius: 10px;
+            margin-bottom: 12px;
         }
 
         .result-box {
             background: #f8f9fa;
-
             border-radius: 12px;
-
             padding: 14px;
             margin-top: 10px;
         }
 
         .result-row {
             display: flex;
-
-            justify-content:
-                space-between;
-
+            justify-content: space-between;
             gap: 12px;
-
-            padding:
-                7px
-                0;
-
+            padding: 7px 0;
             border-bottom:
-                1px
-                solid
-                #eaecf0;
+                1px solid #eaecf0;
         }
 
         .result-row:last-child {
@@ -303,66 +286,9 @@
             text-align: right;
         }
 
-        .success {
-            background: #d1e7dd;
-            color: #0f5132;
-
-            padding: 12px;
-
-            border-radius: 10px;
-
-            margin-bottom: 12px;
-        }
-
-        .error {
-            background: #f8d7da;
-            color: #842029;
-
-            padding: 12px;
-
-            border-radius: 10px;
-
-            margin-bottom: 12px;
-        }
-
-        .rapid-dose {
-            background: #f8f9fa;
-
-            border:
-                1px
-                solid
-                #eaecf0;
-
-            border-radius: 12px;
-
-            padding: 12px;
-            margin-bottom: 10px;
-        }
-
-        .rapid-dose-header {
-            display: flex;
-
-            align-items: center;
-            justify-content: space-between;
-
-            gap: 12px;
-
-            margin-bottom: 10px;
-        }
-
-        .rapid-dose-title {
-            font-weight: 700;
-            font-size: 14px;
-        }
-
-        @media (
-            max-width: 600px
-        ) {
+        @media (max-width: 600px) {
             .page {
-                padding:
-                    10px
-                    10px
-                    40px;
+                padding: 10px 10px 40px;
             }
 
             .card {
@@ -381,10 +307,6 @@
             h1 {
                 font-size: 25px;
             }
-
-            .rapid-dose-header {
-                align-items: flex-start;
-            }
         }
     </style>
 </head>
@@ -398,23 +320,17 @@
     </h1>
 
     <p class="subtitle">
-        Shadow V1.1
+        Výzkumný Shadow Mode
     </p>
 
     <div class="warning">
-
         <strong>
-            Výzkumný shadow režim.
+            Výzkumný prototyp.
         </strong>
 
-        <br>
-
-        Výstup systému je během rozhodování skrytý
-        a neslouží jako doporučení pro léčbu.
-
-        Shadow V1.1 je zatím určen pouze pro
-        situace bez plánovaného jídla.
-
+        Výstup systému je během rozhodování
+        skrytý a neslouží jako doporučení
+        k léčbě nebo k podání inzulínu.
     </div>
 
 
@@ -424,26 +340,26 @@
     ></div>
 
 
-    <!-- AKTUALNI SESSION -->
+    <!-- SESSION -->
 
     <div class="card">
 
         <h2>
-            Aktuální session
+            Aktuální situace
         </h2>
 
         <div
             id="sessionStatus"
             class="status"
         >
-            Žádná aktivní session
+            Žádná aktivní situace
         </div>
 
         <div
             id="sessionIdBox"
             class="muted"
         >
-            Začni vytvořením nové situace.
+            Začni zadáním nové situace.
         </div>
 
         <button
@@ -459,13 +375,13 @@
             class="danger hidden"
             type="button"
         >
-            Zahodit lokální session a začít novou
+            Zahodit tuto situaci a začít novou
         </button>
 
     </div>
 
 
-    <!-- NOVA SITUACE -->
+    <!-- SITUACE -->
 
     <div
         id="situationCard"
@@ -473,16 +389,15 @@
     >
 
         <h2>
-            1. Nová situace
+            1. Co se děje právě teď?
         </h2>
 
         <div class="grid">
 
-
             <div class="full">
 
                 <label for="decisionAt">
-                    Čas rozhodnutí
+                    Čas situace
                 </label>
 
                 <input
@@ -496,7 +411,7 @@
             <div>
 
                 <label for="glucose">
-                    Glykémie mmol/l
+                    Aktuální glykémie
                 </label>
 
                 <input
@@ -509,19 +424,23 @@
                     placeholder="např. 10.4"
                 >
 
+                <div class="help">
+                    Hodnota v mmol/l právě teď.
+                </div>
+
             </div>
 
 
             <div>
 
                 <label for="trend">
-                    Trend
+                    Trend glykémie
                 </label>
 
                 <select id="trend">
 
                     <option value="">
-                        —
+                        Nevím / nezadávat
                     </option>
 
                     <option value="RISING">
@@ -529,7 +448,7 @@
                     </option>
 
                     <option value="STABLE">
-                        Stabilní
+                        Přibližně stabilní
                     </option>
 
                     <option value="FALLING">
@@ -544,7 +463,7 @@
             <div>
 
                 <label for="delta15">
-                    Změna 15 min
+                    Změna za posledních 15 min
                 </label>
 
                 <input
@@ -552,8 +471,13 @@
                     type="number"
                     inputmode="decimal"
                     step="0.1"
-                    placeholder="např. +0.3"
+                    placeholder="např. 0.4"
                 >
+
+                <div class="help">
+                    Aktuální glykémie mínus hodnota
+                    před 15 min. Např. 10.0 − 9.6 = +0.4.
+                </div>
 
             </div>
 
@@ -561,7 +485,7 @@
             <div>
 
                 <label for="delta30">
-                    Změna 30 min
+                    Změna za posledních 30 min
                 </label>
 
                 <input
@@ -569,7 +493,13 @@
                     type="number"
                     inputmode="decimal"
                     step="0.1"
+                    placeholder="např. 0.8"
                 >
+
+                <div class="help">
+                    Aktuální glykémie mínus hodnota
+                    před 30 min.
+                </div>
 
             </div>
 
@@ -577,7 +507,7 @@
             <div>
 
                 <label for="delta60">
-                    Změna 60 min
+                    Změna za posledních 60 min
                 </label>
 
                 <input
@@ -585,53 +515,150 @@
                     type="number"
                     inputmode="decimal"
                     step="0.1"
+                    placeholder="např. -1.2"
                 >
+
+                <div class="help">
+                    Kladné číslo = glykémie stoupla.
+                    Záporné = klesla.
+                </div>
 
             </div>
 
         </div>
 
 
+        <!-- PLÁNOVANÉ JÍDLO -->
+
         <hr class="separator">
 
-
         <h3>
-            Předchozí NovoRapid
+            Chystám se teď jíst?
         </h3>
 
-        <p class="mini">
-            Zadej všechny relevantní dávky
-            z posledních přibližně 6 hodin.
-            Pokud žádná nebyla, nech seznam prázdný.
-        </p>
+        <div class="checkbox-row">
 
+            <input
+                id="mealPlanned"
+                type="checkbox"
+            >
+
+            <label for="mealPlanned">
+                Ano, chystám se jíst
+            </label>
+
+        </div>
+
+
+        <div
+            id="mealFields"
+            class="hidden"
+        >
+
+            <div class="info">
+                Tuto situaci normálně uložíme
+                včetně jídla a tvého plánu.
+
+                Současný Shadow V1.1 ale dávku
+                pro plánované jídlo ještě
+                nevyhodnocuje, takže u této
+                situace zatím pravděpodobně
+                skončí jako <strong>ABSTAIN</strong>.
+            </div>
+
+
+            <div class="grid">
+
+                <div>
+
+                    <label for="mealCarbs">
+                        Sacharidy celkem
+                    </label>
+
+                    <input
+                        id="mealCarbs"
+                        type="number"
+                        inputmode="decimal"
+                        min="0"
+                        step="1"
+                        placeholder="např. 70"
+                    >
+
+                    <div class="help">
+                        Kolik gramů sacharidů
+                        se chystáš sníst.
+                    </div>
+
+                </div>
+
+
+                <div>
+
+                    <label for="mealDescription">
+                        Co se chystáš sníst?
+                    </label>
+
+                    <input
+                        id="mealDescription"
+                        type="text"
+                        placeholder="např. rýže s kuřetem"
+                    >
+
+                    <div class="help">
+                        Volitelný popis jídla.
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- NOVORAPID -->
+
+        <hr class="separator">
+
+        <h3>
+            NovoRapid podaný před touto situací
+        </h3>
+
+        <p class="muted">
+            Přidej všechny relevantní předchozí
+            dávky přibližně za posledních 6 hodin.
+            Pokud žádná nebyla, nic nepřidávej.
+        </p>
 
         <div id="rapidDoseList">
         </div>
-
 
         <button
             id="addRapidDoseButton"
             class="secondary"
             type="button"
         >
-            + Přidat předchozí dávku
+            + Přidat předchozí NovoRapid
         </button>
 
 
+        <!-- TRESIBA -->
+
         <hr class="separator">
 
-
         <h3>
-            Tresiba
+            Poslední Tresiba
         </h3>
+
+        <p class="muted">
+            Poslední bazální dávka před touto situací.
+        </p>
 
         <div class="grid">
 
             <div>
 
                 <label for="tresibaUnits">
-                    Jednotky
+                    Dávka Tresiby
                 </label>
 
                 <input
@@ -640,6 +667,7 @@
                     inputmode="decimal"
                     min="0"
                     step="0.5"
+                    placeholder="jednotky"
                 >
 
             </div>
@@ -648,7 +676,7 @@
             <div>
 
                 <label for="tresibaAt">
-                    Čas poslední dávky
+                    Kdy byla podána?
                 </label>
 
                 <input
@@ -661,15 +689,17 @@
         </div>
 
 
+        <!-- AKTIVITA -->
+
         <hr class="separator">
 
-
         <h3>
-            Poslední aktivita
+            Nedávná fyzická aktivita
         </h3>
 
-        <p class="mini">
-            Volitelné.
+        <p class="muted">
+            Volitelné. Například posilovna,
+            běh, fotbal nebo delší chůze.
         </p>
 
         <div class="grid">
@@ -677,7 +707,7 @@
             <div>
 
                 <label for="activityType">
-                    Typ
+                    Typ aktivity
                 </label>
 
                 <input
@@ -698,19 +728,19 @@
                 <select id="activityIntensity">
 
                     <option value="">
-                        —
+                        Nezadávat
                     </option>
 
                     <option value="LOW">
-                        LOW
+                        Nízká
                     </option>
 
                     <option value="MEDIUM">
-                        MEDIUM
+                        Střední
                     </option>
 
                     <option value="HIGH">
-                        HIGH
+                        Vysoká
                     </option>
 
                 </select>
@@ -721,7 +751,7 @@
             <div>
 
                 <label for="activityStart">
-                    Začátek
+                    Začátek aktivity
                 </label>
 
                 <input
@@ -735,7 +765,7 @@
             <div>
 
                 <label for="activityEnd">
-                    Konec
+                    Konec aktivity
                 </label>
 
                 <input
@@ -751,12 +781,12 @@
         <div style="margin-top: 14px">
 
             <label for="situationNote">
-                Poznámka
+                Poznámka k situaci
             </label>
 
             <textarea
                 id="situationNote"
-                placeholder="Volitelné"
+                placeholder="Cokoliv dalšího, co může být důležité"
             ></textarea>
 
         </div>
@@ -767,13 +797,13 @@
             class="primary"
             type="button"
         >
-            Uložit situaci
+            Uložit aktuální situaci
         </button>
 
     </div>
 
 
-    <!-- MUJ PLAN -->
+    <!-- USER PLAN -->
 
     <div
         id="planCard"
@@ -781,12 +811,13 @@
     >
 
         <h2>
-            2. Můj plán
+            2. Co bych udělal já?
         </h2>
 
         <p class="muted">
-            Shadow už je v tuto chvíli vytvořen,
-            ale jeho výsledek zůstává skrytý.
+            Systém už svůj Shadow výsledek
+            vytvořil nebo se rozhodl pro ABSTAIN,
+            ale zatím ho neuvidíš.
         </p>
 
         <div class="grid">
@@ -794,24 +825,24 @@
             <div>
 
                 <label for="strategy">
-                    Strategie
+                    Jak chci dávku podat?
                 </label>
 
                 <select id="strategy">
 
                     <option value="NONE">
-                        NONE
+                        Žádný NovoRapid
                     </option>
 
                     <option
                         value="SINGLE"
                         selected
                     >
-                        SINGLE
+                        Jedna dávka
                     </option>
 
                     <option value="SPLIT">
-                        SPLIT
+                        Rozdělená dávka
                     </option>
 
                 </select>
@@ -831,6 +862,7 @@
                     inputmode="decimal"
                     step="0.5"
                     min="0"
+                    placeholder="jednotky"
                 >
 
             </div>
@@ -839,7 +871,7 @@
             <div>
 
                 <label for="prebolus">
-                    Prebolus min
+                    Kolik minut před jídlem?
                 </label>
 
                 <input
@@ -851,6 +883,11 @@
                     placeholder="volitelné"
                 >
 
+                <div class="help">
+                    Pokud nejde o jídlo nebo prebolus
+                    nepoužíváš, nech prázdné.
+                </div>
+
             </div>
 
 
@@ -860,7 +897,7 @@
             >
 
                 <label for="firstDose">
-                    První dávka
+                    První část dávky
                 </label>
 
                 <input
@@ -880,7 +917,7 @@
             >
 
                 <label for="secondDose">
-                    Druhá dávka
+                    Druhá část dávky
                 </label>
 
                 <input
@@ -900,7 +937,7 @@
             >
 
                 <label for="secondDelay">
-                    Druhá dávka za min
+                    Za kolik minut druhá část?
                 </label>
 
                 <input
@@ -935,12 +972,12 @@
     >
 
         <h2>
-            3. Výsledek situace
+            3. Jak situace dopadla?
         </h2>
 
         <p class="muted">
-            Doplň dostupné hodnoty po situaci.
-            Nemusíš mít nutně všechny horizonty.
+            Doplň glykémii po rozhodnutí.
+            Nemusíš mít všechny hodnoty.
         </p>
 
         <div class="grid">
@@ -948,7 +985,7 @@
             <div>
 
                 <label for="baseline">
-                    Výchozí glykémie
+                    Glykémie na začátku
                 </label>
 
                 <input
@@ -964,7 +1001,7 @@
             <div>
 
                 <label for="g30">
-                    +30 min
+                    Glykémie po 30 min
                 </label>
 
                 <input
@@ -980,7 +1017,7 @@
             <div>
 
                 <label for="g60">
-                    +60 min
+                    Glykémie po 60 min
                 </label>
 
                 <input
@@ -996,7 +1033,7 @@
             <div>
 
                 <label for="g90">
-                    +90 min
+                    Glykémie po 90 min
                 </label>
 
                 <input
@@ -1012,7 +1049,7 @@
             <div>
 
                 <label for="g120">
-                    +120 min
+                    Glykémie po 2 hodinách
                 </label>
 
                 <input
@@ -1028,7 +1065,7 @@
             <div>
 
                 <label for="g180">
-                    +180 min
+                    Glykémie po 3 hodinách
                 </label>
 
                 <input
@@ -1046,12 +1083,12 @@
         <div style="margin-top: 14px">
 
             <label for="outcomeNote">
-                Poznámka
+                Poznámka k výsledku
             </label>
 
             <textarea
                 id="outcomeNote"
-                placeholder="Volitelné"
+                placeholder="Např. další jídlo, další inzulín, nečekaná aktivita..."
             ></textarea>
 
         </div>
@@ -1062,13 +1099,13 @@
             class="primary"
             type="button"
         >
-            Dokončit situaci
+            Dokončit situaci a odhalit Shadow
         </button>
 
     </div>
 
 
-    <!-- VYSLEDEK -->
+    <!-- RESULT -->
 
     <div
         id="resultCard"
@@ -1076,19 +1113,18 @@
     >
 
         <h2>
-            4. Výsledek experimentu
+            4. Porovnání
         </h2>
 
-        <div
-            id="resultContent"
-        ></div>
+        <div id="resultContent">
+        </div>
 
         <button
             id="finishButton"
             class="primary"
             type="button"
         >
-            Nová situace
+            Začít novou situaci
         </button>
 
     </div>
@@ -1098,1495 +1134,1117 @@
 
 <script>
 
-    const LOCAL_USER_ID =
-        "d78bf688-ec52-495c-b390-9e6747fedb47";
+const LOCAL_USER_ID =
+    "d78bf688-ec52-495c-b390-9e6747fedb47";
 
-    const CLOUD_USER_ID =
-        "a55893d8-7f81-4ff0-9393-3e731cdf431b";
+const CLOUD_USER_ID =
+    "a55893d8-7f81-4ff0-9393-3e731cdf431b";
 
-    const storageKey =
-        "diabetesShadowSessionId";
-
-
-    const byId = (
-        id
-    ) => document.getElementById(
-        id
-    );
+const storageKey =
+    "diabetesShadowSessionId";
 
 
-    function isCloud() {
-        return (
-            window.location.hostname
-            .includes(
-                "onrender.com"
-            )
+const byId = id =>
+    document.getElementById(id);
+
+
+function isCloud() {
+    return window.location.hostname
+        .includes("onrender.com");
+}
+
+
+function currentUserId() {
+    return isCloud()
+        ? CLOUD_USER_ID
+        : LOCAL_USER_ID;
+}
+
+
+function localDateTimeValue(
+    date = new Date()
+) {
+    const offset =
+        date.getTimezoneOffset();
+
+    const local =
+        new Date(
+            date.getTime()
+            - offset * 60 * 1000
         );
+
+    return local
+        .toISOString()
+        .slice(0, 16);
+}
+
+
+function toIso(value) {
+    if (!value) {
+        return null;
     }
 
-
-    function currentUserId() {
-        return (
-            isCloud()
-            ? CLOUD_USER_ID
-            : LOCAL_USER_ID
-        );
-    }
+    return new Date(value)
+        .toISOString();
+}
 
 
-    function localDateTimeValue(
-        date = new Date()
+function numberOrNull(value) {
+    if (
+        value === null
+        || value === undefined
+        || String(value).trim() === ""
     ) {
-        const offset =
-            date.getTimezoneOffset();
-
-        const local =
-            new Date(
-                date.getTime()
-                - offset
-                * 60
-                * 1000
-            );
-
-        return (
-            local
-            .toISOString()
-            .slice(
-                0,
-                16
-            )
-        );
+        return null;
     }
 
+    const number =
+        Number(value);
 
-    function toIso(
-        value
-    ) {
-        if (!value) {
-            return null;
-        }
-
-        return (
-            new Date(
-                value
-            )
-            .toISOString()
-        );
-    }
+    return Number.isNaN(number)
+        ? null
+        : number;
+}
 
 
-    function numberOrNull(
-        value
-    ) {
-        if (
-            value === null
-            || value === undefined
-            || String(
-                value
-            ).trim() === ""
-        ) {
-            return null;
-        }
+function intOrNull(value) {
+    const result =
+        numberOrNull(value);
 
-        const number =
-            Number(
-                value
-            );
-
-        if (
-            Number.isNaN(
-                number
-            )
-        ) {
-            return null;
-        }
-
-        return number;
-    }
+    return result === null
+        ? null
+        : Math.round(result);
+}
 
 
-    function intOrNull(
-        value
-    ) {
-        const result =
-            numberOrNull(
-                value
-            );
+function showMessage(
+    text,
+    type = "error"
+) {
+    const message =
+        byId("message");
 
-        if (
-            result === null
-        ) {
-            return null;
-        }
+    message.textContent =
+        text;
 
-        return Math.round(
-            result
-        );
-    }
+    message.className =
+        type;
 
-
-    function showMessage(
-        text,
-        type = "error"
-    ) {
-        const message =
-            byId(
-                "message"
-            );
-
-        message.textContent =
-            text;
-
-        message.className =
-            type;
-
-        window.scrollTo({
-            top: 0,
-            behavior: "smooth"
-        });
-    }
+    window.scrollTo({
+        top: 0,
+        behavior: "smooth"
+    });
+}
 
 
-    function clearMessage() {
-        const message =
-            byId(
-                "message"
-            );
+function clearMessage() {
+    const message =
+        byId("message");
 
-        message.textContent = "";
-
-        message.className =
-            "hidden";
-    }
+    message.textContent = "";
+    message.className =
+        "hidden";
+}
 
 
-    function setBusy(
-        button,
-        busy
-    ) {
-        button.disabled =
-            busy;
-    }
+function setBusy(
+    button,
+    busy
+) {
+    button.disabled =
+        busy;
+}
 
 
-    async function requestJson(
-        url,
-        options = {}
-    ) {
-        const response =
-            await fetch(
-                url,
-                {
-                    headers: {
-                        "Content-Type":
-                            "application/json",
+async function requestJson(
+    url,
+    options = {}
+) {
+    const response =
+        await fetch(
+            url,
+            {
+                headers: {
+                    "Content-Type":
+                        "application/json",
 
-                        ...(
-                            options.headers
-                            || {}
-                        )
-                    },
-
-                    ...options
-                }
-            );
-
-        let data = null;
-
-        try {
-            data =
-                await response.json();
-        }
-
-        catch {
-            data = null;
-        }
-
-        if (
-            !response.ok
-        ) {
-            let detail =
-                (
-                    data
-                    && data.detail
-                )
-                ? data.detail
-                : (
-                    "HTTP "
-                    + response.status
-                );
-
-            if (
-                Array.isArray(
-                    detail
-                )
-            ) {
-                detail =
-                    detail
-                    .map(
-                        item =>
-                            item.msg
+                    ...(
+                        options.headers
+                        || {}
                     )
-                    .join(
-                        ", "
-                    );
-            }
+                },
 
-            throw new Error(
-                detail
+                ...options
+            }
+        );
+
+    let data = null;
+
+    try {
+        data =
+            await response.json();
+    }
+    catch {
+        data = null;
+    }
+
+    if (!response.ok) {
+        let detail =
+            data?.detail
+            ?? (
+                "HTTP "
+                + response.status
             );
+
+        if (
+            Array.isArray(detail)
+        ) {
+            detail =
+                detail
+                .map(
+                    item => item.msg
+                )
+                .join(", ");
         }
 
-        return data;
-    }
-
-
-    function resetSections() {
-        byId(
-            "situationCard"
-        ).classList.add(
-            "hidden"
-        );
-
-        byId(
-            "planCard"
-        ).classList.add(
-            "hidden"
-        );
-
-        byId(
-            "outcomeCard"
-        ).classList.add(
-            "hidden"
-        );
-
-        byId(
-            "resultCard"
-        ).classList.add(
-            "hidden"
+        throw new Error(
+            detail
         );
     }
 
-
-    function showNoSession() {
-        resetSections();
-
-        byId(
-            "situationCard"
-        ).classList.remove(
-            "hidden"
-        );
-
-        byId(
-            "sessionStatus"
-        ).textContent =
-            "Žádná aktivní session";
-
-        byId(
-            "sessionIdBox"
-        ).textContent =
-            "Začni vytvořením nové situace.";
-
-        byId(
-            "refreshButton"
-        ).classList.add(
-            "hidden"
-        );
-
-        byId(
-            "newSessionButton"
-        ).classList.add(
-            "hidden"
-        );
-    }
+    return data;
+}
 
 
-    function showSessionHeader(
-        session
-    ) {
-        byId(
-            "sessionStatus"
-        ).textContent =
-            session.status;
-
-        byId(
-            "sessionIdBox"
-        ).textContent =
-            "Session: "
-            + session.id;
-
-        byId(
-            "refreshButton"
-        ).classList.remove(
-            "hidden"
-        );
-
-        byId(
-            "newSessionButton"
-        ).classList.remove(
-            "hidden"
-        );
-    }
+function resetSections() {
+    [
+        "situationCard",
+        "planCard",
+        "outcomeCard",
+        "resultCard"
+    ].forEach(
+        id =>
+            byId(id)
+            .classList
+            .add("hidden")
+    );
+}
 
 
-    function addRapidDoseRow(
-        units = "",
-        datetime = ""
-    ) {
-        const list =
-            byId(
-                "rapidDoseList"
-            );
+function showNoSession() {
+    resetSections();
 
-        const wrapper =
-            document.createElement(
-                "div"
-            );
+    byId("situationCard")
+        .classList
+        .remove("hidden");
 
-        wrapper.className =
-            "rapid-dose";
+    byId("sessionStatus")
+        .textContent =
+        "Žádná aktivní situace";
 
-        wrapper.innerHTML = `
+    byId("sessionIdBox")
+        .textContent =
+        "Začni zadáním nové situace.";
 
-            <div class="rapid-dose-header">
+    byId("refreshButton")
+        .classList
+        .add("hidden");
 
-                <div class="rapid-dose-title">
-                    Předchozí dávka
-                </div>
+    byId("newSessionButton")
+        .classList
+        .add("hidden");
+}
 
-                <button
-                    type="button"
-                    class="
-                        small-button
-                        remove-button
-                        removeRapidDoseButton
-                    "
+
+function showSessionHeader(
+    session
+) {
+    const translations = {
+        WAITING_USER_PLAN:
+            "Čeká na můj plán",
+
+        WAITING_OUTCOME:
+            "Čeká na výsledek situace",
+
+        COMPLETED:
+            "Dokončeno",
+
+        CANCELLED:
+            "Zrušeno"
+    };
+
+    byId("sessionStatus")
+        .textContent =
+        translations[
+            session.status
+        ]
+        || session.status;
+
+    byId("sessionIdBox")
+        .textContent =
+        "Session: "
+        + session.id;
+
+    byId("refreshButton")
+        .classList
+        .remove("hidden");
+
+    byId("newSessionButton")
+        .classList
+        .remove("hidden");
+}
+
+
+function addRapidDoseRow(
+    units = "",
+    datetime = ""
+) {
+    const wrapper =
+        document.createElement("div");
+
+    wrapper.className =
+        "rapid-dose";
+
+    wrapper.innerHTML = `
+
+        <div class="rapid-dose-header">
+
+            <div class="rapid-dose-title">
+                Předchozí dávka NovoRapidu
+            </div>
+
+            <button
+                type="button"
+                class="
+                    small-button
+                    remove-button
+                    removeRapidDoseButton
+                "
+            >
+                Odebrat
+            </button>
+
+        </div>
+
+        <div class="grid">
+
+            <div>
+
+                <label>
+                    Dávka
+                </label>
+
+                <input
+                    class="rapidUnits"
+                    type="number"
+                    inputmode="decimal"
+                    min="0"
+                    step="0.5"
+                    value="${units}"
+                    placeholder="jednotky"
                 >
-                    Odebrat
-                </button>
 
             </div>
 
-            <div class="grid">
+            <div>
 
-                <div>
+                <label>
+                    Kdy byla podána?
+                </label>
 
-                    <label>
-                        Jednotky
-                    </label>
-
-                    <input
-                        class="rapidUnits"
-                        type="number"
-                        inputmode="decimal"
-                        min="0"
-                        step="0.5"
-                        value="${units}"
-                    >
-
-                </div>
-
-
-                <div>
-
-                    <label>
-                        Čas
-                    </label>
-
-                    <input
-                        class="rapidAt"
-                        type="datetime-local"
-                        value="${datetime}"
-                    >
-
-                </div>
+                <input
+                    class="rapidAt"
+                    type="datetime-local"
+                    value="${datetime}"
+                >
 
             </div>
-        `;
 
+        </div>
+    `;
 
-        wrapper
+    wrapper
         .querySelector(
             ".removeRapidDoseButton"
         )
         .addEventListener(
             "click",
-            () => {
-                wrapper.remove();
-            }
+            () => wrapper.remove()
         );
 
-
-        list.appendChild(
+    byId("rapidDoseList")
+        .appendChild(
             wrapper
         );
-    }
+}
 
 
-    function collectRapidDoses() {
-        const rows =
-            document.querySelectorAll(
-                ".rapid-dose"
-            );
+function collectRapidDoses() {
+    const rows =
+        document.querySelectorAll(
+            ".rapid-dose"
+        );
 
-        const doses = [];
+    const doses = [];
 
-        for (
-            const row
-            of rows
-        ) {
-            const units =
-                numberOrNull(
-                    row
+    for (
+        const row
+        of rows
+    ) {
+        const units =
+            numberOrNull(
+                row
                     .querySelector(
                         ".rapidUnits"
                     )
                     .value
-                );
+            );
 
-            const administeredAt =
-                toIso(
-                    row
+        const administeredAt =
+            toIso(
+                row
                     .querySelector(
                         ".rapidAt"
                     )
                     .value
-                );
+            );
 
-
-            const completelyEmpty =
-                (
-                    units === null
-                    && administeredAt === null
-                );
-
-
-            if (
-                completelyEmpty
-            ) {
-                continue;
-            }
-
-
-            if (
-                units === null
-                || administeredAt === null
-            ) {
-                throw new Error(
-                    "U každé předchozí dávky "
-                    + "NovoRapidu vyplň jednotky "
-                    + "i čas."
-                );
-            }
-
-
-            doses.push({
-                units:
-                    units,
-
-                administered_at:
-                    administeredAt
-            });
+        if (
+            units === null
+            && administeredAt === null
+        ) {
+            continue;
         }
 
+        if (
+            units === null
+            || administeredAt === null
+        ) {
+            throw new Error(
+                "U každé předchozí dávky "
+                + "NovoRapidu vyplň dávku i čas."
+            );
+        }
 
-        doses.sort(
-            (
-                a,
-                b
-            ) =>
-                new Date(
-                    a.administered_at
-                )
-                -
-                new Date(
-                    b.administered_at
-                )
+        doses.push({
+            units:
+                units,
+
+            administered_at:
+                administeredAt
+        });
+    }
+
+    doses.sort(
+        (a, b) =>
+            new Date(
+                a.administered_at
+            )
+            -
+            new Date(
+                b.administered_at
+            )
+    );
+
+    return doses;
+}
+
+
+function updateMealFields() {
+    byId("mealFields")
+        .classList
+        .toggle(
+            "hidden",
+            !byId("mealPlanned")
+                .checked
         );
+}
 
 
-        return doses;
+function readableAbstainReason(
+    reason
+) {
+    const translations = {
+        MEAL_CONTEXT_NOT_SUPPORTED_V1:
+            "Shadow V1.1 zatím neumí "
+            + "vyhodnocovat plánované jídlo.",
+
+        INSUFFICIENT_EVIDENCE_V1:
+            "Nebylo nalezeno dost "
+            + "dostatečně silných "
+            + "historických případů.",
+
+        MISSING_CURRENT_GLUCOSE_V1:
+            "Chyběla aktuální glykémie."
+    };
+
+    return translations[
+        reason
+    ] || reason || "—";
+}
+
+
+function displayResult(
+    session
+) {
+    const user =
+        session.comparison?.user;
+
+    const system =
+        session.comparison?.system;
+
+    const outcome =
+        session.comparison?.outcome;
+
+
+    let systemValue = "—";
+
+    if (
+        system?.status === "PLAN"
+    ) {
+        systemValue =
+            system
+                .total_novorapid_units
+            + " U";
+    }
+
+    else if (
+        system?.status === "ABSTAIN"
+    ) {
+        systemValue =
+            "Bez odhadu (ABSTAIN)";
     }
 
 
-    function displayResult(
-        session
-    ) {
-        const user =
-            session.comparison
-            ?.user;
-
-        const system =
-            session.comparison
-            ?.system;
-
-        const outcome =
-            session.comparison
-            ?.outcome;
-
-
-        let systemValue =
-            "—";
-
-        if (
-            system
-            ?.status
-            === "PLAN"
-        ) {
-            systemValue =
-                system
-                .total_novorapid_units
-                + " U";
-        }
-
-        else if (
-            system
-            ?.status
-            === "ABSTAIN"
-        ) {
-            systemValue =
-                "ABSTAIN";
-        }
-
-
-        let difference =
-            session.comparison
+    let difference =
+        session.comparison
             ?.absolute_dose_difference;
 
-        if (
+    difference =
+        (
             difference === null
-            || difference
-            === undefined
-        ) {
-            difference = "—";
-        }
-
-        else {
-            difference +=
-                " U";
-        }
+            || difference === undefined
+        )
+        ? "—"
+        : difference + " U";
 
 
-        let abstainReason = "";
+    let abstainReason = "";
 
-        if (
-            session.system_shadow
+    if (
+        session.system_shadow
             ?.status
-            === "ABSTAIN"
-        ) {
-            abstainReason = `
+        === "ABSTAIN"
+    ) {
+        abstainReason = `
 
-                <div class="result-row">
+            <div class="result-row">
 
-                    <span>
-                        Důvod ABSTAIN
-                    </span>
+                <span>
+                    Proč systém neodhadoval?
+                </span>
 
-                    <span class="result-value">
-                        ${
+                <span class="result-value">
+                    ${
+                        readableAbstainReason(
                             session
-                            .system_shadow
-                            .abstain_reason
-                            || "—"
-                        }
-                    </span>
-
-                </div>
-            `;
-        }
-
-
-        byId(
-            "resultContent"
-        ).innerHTML = `
-
-            <div class="success">
-
-                Session byla dokončena.
-                Shadow je nyní odhalen.
+                                .system_shadow
+                                .abstain_reason
+                        )
+                    }
+                </span>
 
             </div>
-
-
-            <div class="result-box">
-
-                <div class="result-row">
-
-                    <span>
-                        Můj plán
-                    </span>
-
-                    <span class="result-value">
-
-                        ${
-                            user
-                            ?.total_novorapid_units
-                            ?? "—"
-                        }
-
-                        ${
-                            user
-                            ?.total_novorapid_units
-                            !== null
-                            && user
-                            ?.total_novorapid_units
-                            !== undefined
-                            ? " U"
-                            : ""
-                        }
-
-                    </span>
-
-                </div>
-
-
-                <div class="result-row">
-
-                    <span>
-                        Shadow
-                    </span>
-
-                    <span class="result-value">
-                        ${systemValue}
-                    </span>
-
-                </div>
-
-
-                ${abstainReason}
-
-
-                <div class="result-row">
-
-                    <span>
-                        Model
-                    </span>
-
-                    <span class="result-value">
-
-                        ${
-                            system
-                            ?.model_version
-                            || "—"
-                        }
-
-                    </span>
-
-                </div>
-
-
-                <div class="result-row">
-
-                    <span>
-                        Support
-                    </span>
-
-                    <span class="result-value">
-
-                        ${
-                            system
-                            ?.support_count
-                            ?? "—"
-                        }
-
-                    </span>
-
-                </div>
-
-
-                <div class="result-row">
-
-                    <span>
-                        Nejsilnější evidence
-                    </span>
-
-                    <span class="result-value">
-
-                        ${
-                            system
-                            ?.strongest_evidence
-                            ?? "—"
-                        }
-
-                    </span>
-
-                </div>
-
-
-                <div class="result-row">
-
-                    <span>
-                        Rozdíl dávek
-                    </span>
-
-                    <span class="result-value">
-                        ${difference}
-                    </span>
-
-                </div>
-
-            </div>
-
-
-            <h3>
-                Outcome
-            </h3>
-
-
-            <div class="result-box">
-
-                <div class="result-row">
-
-                    <span>
-                        Quality
-                    </span>
-
-                    <span class="result-value">
-
-                        ${
-                            outcome
-                            ?.quality_score
-                            ?? "—"
-                        }
-
-                    </span>
-
-                </div>
-
-
-                <div class="result-row">
-
-                    <span>
-                        Status
-                    </span>
-
-                    <span class="result-value">
-
-                        ${
-                            outcome
-                            ?.quality_status
-                            || "—"
-                        }
-
-                    </span>
-
-                </div>
-
-
-                <div class="result-row">
-
-                    <span>
-                        Confidence
-                    </span>
-
-                    <span class="result-value">
-
-                        ${
-                            outcome
-                            ?.confidence
-                            ?? "—"
-                        }
-
-                    </span>
-
-                </div>
-
-
-                <div class="result-row">
-
-                    <span>
-                        Hypo
-                    </span>
-
-                    <span class="result-value">
-
-                        ${
-                            outcome
-                            ?.low_detected
-                            ? "ANO"
-                            : "NE"
-                        }
-
-                    </span>
-
-                </div>
-
-
-                <div class="result-row">
-
-                    <span>
-                        Hyper
-                    </span>
-
-                    <span class="result-value">
-
-                        ${
-                            outcome
-                            ?.high_detected
-                            ? "ANO"
-                            : "NE"
-                        }
-
-                    </span>
-
-                </div>
-
-            </div>
-
-
-            <p class="mini">
-
-                Toto je pouze retrospektivní
-                experimentální porovnání.
-
-                Výsledek neurčuje,
-                která alternativa by byla
-                klinicky správná.
-
-            </p>
         `;
     }
 
 
-    function renderSession(
+    byId("resultContent")
+        .innerHTML = `
+
+        <div class="success">
+
+            Situace je dokončena.
+            Skrytý Shadow výsledek je nyní odhalen.
+
+        </div>
+
+
+        <h3>
+            Porovnání plánů
+        </h3>
+
+        <div class="result-box">
+
+            <div class="result-row">
+
+                <span>
+                    Můj plán
+                </span>
+
+                <span class="result-value">
+
+                    ${
+                        user
+                            ?.total_novorapid_units
+                        ?? "—"
+                    }
+
+                    ${
+                        user
+                            ?.total_novorapid_units
+                        !== null
+                        &&
+                        user
+                            ?.total_novorapid_units
+                        !== undefined
+                        ? " U"
+                        : ""
+                    }
+
+                </span>
+
+            </div>
+
+
+            <div class="result-row">
+
+                <span>
+                    Skrytý Shadow
+                </span>
+
+                <span class="result-value">
+                    ${systemValue}
+                </span>
+
+            </div>
+
+
+            ${abstainReason}
+
+
+            <div class="result-row">
+
+                <span>
+                    Rozdíl mezi dávkami
+                </span>
+
+                <span class="result-value">
+                    ${difference}
+                </span>
+
+            </div>
+
+
+            <div class="result-row">
+
+                <span>
+                    Počet podporujících případů
+                </span>
+
+                <span class="result-value">
+
+                    ${
+                        system
+                            ?.support_count
+                        ?? "—"
+                    }
+
+                </span>
+
+            </div>
+
+
+            <div class="result-row">
+
+                <span>
+                    Nejsilnější evidence
+                </span>
+
+                <span class="result-value">
+
+                    ${
+                        system
+                            ?.strongest_evidence
+                        ?? "—"
+                    }
+
+                </span>
+
+            </div>
+
+        </div>
+
+
+        <h3>
+            Jak dopadla skutečná situace
+        </h3>
+
+        <div class="result-box">
+
+            <div class="result-row">
+
+                <span>
+                    Hodnocení průběhu
+                </span>
+
+                <span class="result-value">
+
+                    ${
+                        outcome
+                            ?.quality_score
+                        ?? "—"
+                    }
+
+                </span>
+
+            </div>
+
+
+            <div class="result-row">
+
+                <span>
+                    Kategorie
+                </span>
+
+                <span class="result-value">
+
+                    ${
+                        outcome
+                            ?.quality_status
+                        || "—"
+                    }
+
+                </span>
+
+            </div>
+
+
+            <div class="result-row">
+
+                <span>
+                    Úplnost výsledných dat
+                </span>
+
+                <span class="result-value">
+
+                    ${
+                        outcome
+                            ?.confidence
+                        ?? "—"
+                    }
+                    %
+
+                </span>
+
+            </div>
+
+
+            <div class="result-row">
+
+                <span>
+                    Zachycena hypoglykémie
+                </span>
+
+                <span class="result-value">
+
+                    ${
+                        outcome
+                            ?.low_detected
+                        ? "ANO"
+                        : "NE"
+                    }
+
+                </span>
+
+            </div>
+
+        </div>
+
+
+        <p class="mini">
+
+            Výsledek pouze retrospektivně
+            porovnává zaznamenané plány.
+            Neříká, že by Shadow alternativa
+            byla klinicky správná nebo bezpečná.
+
+        </p>
+    `;
+}
+
+
+function renderSession(
+    session
+) {
+    resetSections();
+
+    showSessionHeader(
         session
+    );
+
+    if (
+        session.status
+        === "WAITING_USER_PLAN"
     ) {
-        resetSections();
+        byId("planCard")
+            .classList
+            .remove("hidden");
 
-        showSessionHeader(
-            session
-        );
+        return;
+    }
 
-
-        if (
-            session.status
-            === "WAITING_USER_PLAN"
-        ) {
-            byId(
-                "planCard"
-            ).classList.remove(
-                "hidden"
-            );
-
-            return;
-        }
-
+    if (
+        session.status
+        === "WAITING_OUTCOME"
+    ) {
+        byId("outcomeCard")
+            .classList
+            .remove("hidden");
 
         if (
-            session.status
-            === "WAITING_OUTCOME"
+            !byId("baseline").value
         ) {
-            byId(
-                "outcomeCard"
-            ).classList.remove(
-                "hidden"
-            );
-
-
-            if (
-                !byId(
-                    "baseline"
-                ).value
-            ) {
-                const baseline =
-                    session
+            const baseline =
+                session
                     .input_snapshot
                     ?.glucose
                     ?.current;
 
-                if (
-                    baseline !== null
-                    && baseline !== undefined
-                ) {
-                    byId(
-                        "baseline"
-                    ).value =
-                        baseline;
-                }
+            if (
+                baseline !== null
+                && baseline !== undefined
+            ) {
+                byId("baseline")
+                    .value =
+                    baseline;
             }
-
-            return;
         }
 
-
-        if (
-            session.status
-            === "COMPLETED"
-        ) {
-            byId(
-                "resultCard"
-            ).classList.remove(
-                "hidden"
-            );
-
-            displayResult(
-                session
-            );
-
-            return;
-        }
-
-
-        showMessage(
-            "Neočekávaný stav session: "
-            + session.status
-        );
+        return;
     }
 
+    if (
+        session.status
+        === "COMPLETED"
+    ) {
+        byId("resultCard")
+            .classList
+            .remove("hidden");
 
-    async function loadSession() {
-        clearMessage();
+        displayResult(
+            session
+        );
 
-        const sessionId =
-            localStorage.getItem(
-                storageKey
-            );
-
-
-        if (
-            !sessionId
-        ) {
-            showNoSession();
-            return;
-        }
-
-
-        try {
-            const session =
-                await requestJson(
-                    "/decision-sessions/"
-                    + sessionId
-                );
-
-            renderSession(
-                session
-            );
-        }
-
-        catch (
-            error
-        ) {
-            showMessage(
-                "Session se nepodařilo načíst: "
-                + error.message
-            );
-        }
+        return;
     }
 
+    showMessage(
+        "Neočekávaný stav situace: "
+        + session.status
+    );
+}
 
-    async function createSession() {
-        clearMessage();
 
-        const button =
-            byId(
-                "createSessionButton"
-            );
+async function loadSession() {
+    clearMessage();
 
-        setBusy(
-            button,
-            true
+    const sessionId =
+        localStorage.getItem(
+            storageKey
         );
 
-
-        try {
-            const glucose =
-                numberOrNull(
-                    byId(
-                        "glucose"
-                    ).value
-                );
-
-
-            if (
-                glucose === null
-            ) {
-                throw new Error(
-                    "Vyplň aktuální glykémii."
-                );
-            }
-
-
-            const decisionAt =
-                toIso(
-                    byId(
-                        "decisionAt"
-                    ).value
-                );
-
-
-            if (
-                !decisionAt
-            ) {
-                throw new Error(
-                    "Vyplň čas rozhodnutí."
-                );
-            }
-
-
-            const recentNovoRapid =
-                collectRapidDoses();
-
-
-            const tresibaUnits =
-                numberOrNull(
-                    byId(
-                        "tresibaUnits"
-                    ).value
-                );
-
-            const tresibaAt =
-                toIso(
-                    byId(
-                        "tresibaAt"
-                    ).value
-                );
-
-
-            let tresiba =
-                null;
-
-
-            if (
-                tresibaUnits !== null
-                || tresibaAt !== null
-            ) {
-                if (
-                    tresibaUnits === null
-                    || tresibaAt === null
-                ) {
-                    throw new Error(
-                        "U Tresiby vyplň "
-                        + "jednotky i čas."
-                    );
-                }
-
-                tresiba = {
-                    units:
-                        tresibaUnits,
-
-                    administered_at:
-                        tresibaAt
-                };
-            }
-
-
-            const activities =
-                [];
-
-
-            const activityType =
-                byId(
-                    "activityType"
-                ).value.trim();
-
-
-            const activityIntensity =
-                byId(
-                    "activityIntensity"
-                ).value;
-
-
-            const activityStart =
-                toIso(
-                    byId(
-                        "activityStart"
-                    ).value
-                );
-
-
-            const activityEnd =
-                toIso(
-                    byId(
-                        "activityEnd"
-                    ).value
-                );
-
-
-            if (
-                activityType
-                || activityIntensity
-                || activityStart
-                || activityEnd
-            ) {
-                if (
-                    !activityType
-                    || !activityIntensity
-                    || !activityStart
-                    || !activityEnd
-                ) {
-                    throw new Error(
-                        "U aktivity vyplň "
-                        + "typ, intenzitu, "
-                        + "začátek i konec."
-                    );
-                }
-
-
-                const duration =
-                    Math.round(
-                        (
-                            new Date(
-                                activityEnd
-                            )
-                            -
-                            new Date(
-                                activityStart
-                            )
-                        )
-                        / 60000
-                    );
-
-
-                if (
-                    duration <= 0
-                ) {
-                    throw new Error(
-                        "Konec aktivity musí být "
-                        + "po začátku."
-                    );
-                }
-
-
-                activities.push({
-                    activity_type:
-                        activityType,
-
-                    intensity:
-                        activityIntensity,
-
-                    duration_minutes:
-                        duration,
-
-                    started_at:
-                        activityStart,
-
-                    ended_at:
-                        activityEnd
-                });
-            }
-
-
-            const payload = {
-
-                user_id:
-                    currentUserId(),
-
-                decision_at:
-                    decisionAt,
-
-                glucose: {
-
-                    current:
-                        glucose,
-
-                    delta_15m:
-                        numberOrNull(
-                            byId(
-                                "delta15"
-                            ).value
-                        ),
-
-                    delta_30m:
-                        numberOrNull(
-                            byId(
-                                "delta30"
-                            ).value
-                        ),
-
-                    delta_60m:
-                        numberOrNull(
-                            byId(
-                                "delta60"
-                            ).value
-                        ),
-
-                    trend:
-                        byId(
-                            "trend"
-                        ).value
-                        || null
-                },
-
-                planned_meal:
-                    null,
-
-                recent_novorapid:
-                    recentNovoRapid,
-
-                tresiba:
-                    tresiba,
-
-                activities:
-                    activities,
-
-                note:
-                    byId(
-                        "situationNote"
-                    ).value.trim()
-                    || null
-            };
-
-
-            const session =
-                await requestJson(
-                    "/decision-sessions",
-                    {
-                        method:
-                            "POST",
-
-                        body:
-                            JSON.stringify(
-                                payload
-                            )
-                    }
-                );
-
-
-            localStorage.setItem(
-                storageKey,
-                session.id
-            );
-
-
-            showMessage(
-                "Situace uložena. "
-                + "Shadow je nyní skrytě vytvořen.",
-                "success"
-            );
-
-
-            renderSession(
-                session
-            );
-        }
-
-        catch (
-            error
-        ) {
-            showMessage(
-                error.message
-            );
-        }
-
-        finally {
-            setBusy(
-                button,
-                false
-            );
-        }
+    if (!sessionId) {
+        showNoSession();
+        return;
     }
 
-
-    function updatePlanFields() {
-        const strategy =
-            byId(
-                "strategy"
-            ).value;
-
-
-        const split =
-            strategy
-            === "SPLIT";
-
-
-        byId(
-            "firstDoseBox"
-        ).classList.toggle(
-            "hidden",
-            !split
-        );
-
-
-        byId(
-            "secondDoseBox"
-        ).classList.toggle(
-            "hidden",
-            !split
-        );
-
-
-        byId(
-            "secondDelayBox"
-        ).classList.toggle(
-            "hidden",
-            !split
-        );
-
-
-        if (
-            strategy
-            === "NONE"
-        ) {
-            byId(
-                "totalUnits"
-            ).value =
-                "0";
-        }
-    }
-
-
-    async function savePlan() {
-        clearMessage();
-
-        const button =
-            byId(
-                "savePlanButton"
-            );
-
-        setBusy(
-            button,
-            true
-        );
-
-
-        try {
-            const sessionId =
-                localStorage.getItem(
-                    storageKey
-                );
-
-
-            if (
-                !sessionId
-            ) {
-                throw new Error(
-                    "Chybí session ID."
-                );
-            }
-
-
-            const strategy =
-                byId(
-                    "strategy"
-                ).value;
-
-
-            let total =
-                numberOrNull(
-                    byId(
-                        "totalUnits"
-                    ).value
-                );
-
-
-            let first =
-                null;
-
-            let second =
-                null;
-
-            let delay =
-                null;
-
-
-            if (
-                strategy
-                === "NONE"
-            ) {
-                total = 0;
-            }
-
-
-            else if (
-                strategy
-                === "SINGLE"
-            ) {
-                if (
-                    total === null
-                    || total <= 0
-                ) {
-                    throw new Error(
-                        "Vyplň celkovou dávku."
-                    );
-                }
-
-                first =
-                    total;
-            }
-
-
-            else if (
-                strategy
-                === "SPLIT"
-            ) {
-                first =
-                    numberOrNull(
-                        byId(
-                            "firstDose"
-                        ).value
-                    );
-
-
-                second =
-                    numberOrNull(
-                        byId(
-                            "secondDose"
-                        ).value
-                    );
-
-
-                delay =
-                    intOrNull(
-                        byId(
-                            "secondDelay"
-                        ).value
-                    );
-
-
-                if (
-                    first === null
-                    || second === null
-                    || delay === null
-                ) {
-                    throw new Error(
-                        "U SPLIT vyplň obě "
-                        + "dávky i čas druhé dávky."
-                    );
-                }
-
-
-                total =
-                    first
-                    + second;
-
-
-                byId(
-                    "totalUnits"
-                ).value =
-                    total;
-            }
-
-
-            const payload = {
-
-                strategy:
-                    strategy,
-
-                total_novorapid_units:
-                    total,
-
-                prebolus_minutes:
-                    intOrNull(
-                        byId(
-                            "prebolus"
-                        ).value
-                    ),
-
-                first_dose_units:
-                    first,
-
-                second_dose_units:
-                    second,
-
-                second_dose_delay_minutes:
-                    delay
-            };
-
-
+    try {
+        const session =
             await requestJson(
                 "/decision-sessions/"
                 + sessionId
-                + "/user-plan",
+            );
+
+        renderSession(
+            session
+        );
+    }
+
+    catch (error) {
+        showMessage(
+            "Situaci se nepodařilo načíst: "
+            + error.message
+        );
+    }
+}
+
+
+async function createSession() {
+    clearMessage();
+
+    const button =
+        byId(
+            "createSessionButton"
+        );
+
+    setBusy(
+        button,
+        true
+    );
+
+    try {
+        const glucose =
+            numberOrNull(
+                byId("glucose")
+                    .value
+            );
+
+        if (
+            glucose === null
+        ) {
+            throw new Error(
+                "Vyplň aktuální glykémii."
+            );
+        }
+
+
+        const decisionAt =
+            toIso(
+                byId("decisionAt")
+                    .value
+            );
+
+        if (!decisionAt) {
+            throw new Error(
+                "Vyplň čas situace."
+            );
+        }
+
+
+        let plannedMeal =
+            null;
+
+        if (
+            byId("mealPlanned")
+                .checked
+        ) {
+            const carbs =
+                numberOrNull(
+                    byId("mealCarbs")
+                        .value
+                );
+
+            if (
+                carbs === null
+            ) {
+                throw new Error(
+                    "Vyplň množství "
+                    + "sacharidů v plánovaném jídle."
+                );
+            }
+
+            plannedMeal = {
+                carbohydrates_g:
+                    carbs,
+
+                description:
+                    byId(
+                        "mealDescription"
+                    )
+                    .value
+                    .trim()
+                    || null,
+
+                items:
+                    []
+            };
+        }
+
+
+        const recentNovoRapid =
+            collectRapidDoses();
+
+
+        const tresibaUnits =
+            numberOrNull(
+                byId("tresibaUnits")
+                    .value
+            );
+
+        const tresibaAt =
+            toIso(
+                byId("tresibaAt")
+                    .value
+            );
+
+        let tresiba = null;
+
+        if (
+            tresibaUnits !== null
+            || tresibaAt !== null
+        ) {
+            if (
+                tresibaUnits === null
+                || tresibaAt === null
+            ) {
+                throw new Error(
+                    "U Tresiby vyplň "
+                    + "dávku i čas."
+                );
+            }
+
+            tresiba = {
+                units:
+                    tresibaUnits,
+
+                administered_at:
+                    tresibaAt
+            };
+        }
+
+
+        const activities = [];
+
+        const activityType =
+            byId("activityType")
+                .value
+                .trim();
+
+        const intensity =
+            byId(
+                "activityIntensity"
+            ).value;
+
+        const start =
+            toIso(
+                byId("activityStart")
+                    .value
+            );
+
+        const end =
+            toIso(
+                byId("activityEnd")
+                    .value
+            );
+
+        if (
+            activityType
+            || intensity
+            || start
+            || end
+        ) {
+            if (
+                !activityType
+                || !intensity
+                || !start
+                || !end
+            ) {
+                throw new Error(
+                    "U aktivity vyplň "
+                    + "typ, intenzitu, "
+                    + "začátek i konec."
+                );
+            }
+
+            const duration =
+                Math.round(
+                    (
+                        new Date(end)
+                        -
+                        new Date(start)
+                    )
+                    / 60000
+                );
+
+            if (
+                duration <= 0
+            ) {
+                throw new Error(
+                    "Konec aktivity musí "
+                    + "být po začátku."
+                );
+            }
+
+            activities.push({
+                activity_type:
+                    activityType,
+
+                intensity:
+                    intensity,
+
+                duration_minutes:
+                    duration,
+
+                started_at:
+                    start,
+
+                ended_at:
+                    end
+            });
+        }
+
+
+        const payload = {
+
+            user_id:
+                currentUserId(),
+
+            decision_at:
+                decisionAt,
+
+            glucose: {
+
+                current:
+                    glucose,
+
+                delta_15m:
+                    numberOrNull(
+                        byId("delta15")
+                            .value
+                    ),
+
+                delta_30m:
+                    numberOrNull(
+                        byId("delta30")
+                            .value
+                    ),
+
+                delta_60m:
+                    numberOrNull(
+                        byId("delta60")
+                            .value
+                    ),
+
+                trend:
+                    byId("trend")
+                        .value
+                    || null
+            },
+
+            planned_meal:
+                plannedMeal,
+
+            recent_novorapid:
+                recentNovoRapid,
+
+            tresiba:
+                tresiba,
+
+            activities:
+                activities,
+
+            note:
+                byId("situationNote")
+                    .value
+                    .trim()
+                || null
+        };
+
+
+        const session =
+            await requestJson(
+                "/decision-sessions",
                 {
                     method:
                         "POST",
@@ -2599,408 +2257,516 @@
             );
 
 
-            showMessage(
-                "Tvůj plán byl uložen. "
-                + "Shadow zůstává skrytý.",
-                "success"
-            );
-
-
-            await loadSession();
-        }
-
-        catch (
-            error
-        ) {
-            showMessage(
-                error.message
-            );
-        }
-
-        finally {
-            setBusy(
-                button,
-                false
-            );
-        }
-    }
-
-
-    async function saveOutcome() {
-        clearMessage();
-
-        const button =
-            byId(
-                "saveOutcomeButton"
-            );
-
-        setBusy(
-            button,
-            true
+        localStorage.setItem(
+            storageKey,
+            session.id
         );
 
 
-        try {
-            const sessionId =
-                localStorage.getItem(
-                    storageKey
-                );
+        showMessage(
+            "Situace byla uložena. "
+            + "Shadow výsledek je skrytý.",
+            "success"
+        );
 
 
+        renderSession(
+            session
+        );
+    }
+
+    catch (error) {
+        showMessage(
+            error.message
+        );
+    }
+
+    finally {
+        setBusy(
+            button,
+            false
+        );
+    }
+}
+
+
+function updatePlanFields() {
+    const strategy =
+        byId("strategy")
+            .value;
+
+    const split =
+        strategy === "SPLIT";
+
+    byId("firstDoseBox")
+        .classList
+        .toggle(
+            "hidden",
+            !split
+        );
+
+    byId("secondDoseBox")
+        .classList
+        .toggle(
+            "hidden",
+            !split
+        );
+
+    byId("secondDelayBox")
+        .classList
+        .toggle(
+            "hidden",
+            !split
+        );
+
+    if (
+        strategy === "NONE"
+    ) {
+        byId("totalUnits")
+            .value =
+            "0";
+    }
+}
+
+
+async function savePlan() {
+    clearMessage();
+
+    const button =
+        byId("savePlanButton");
+
+    setBusy(
+        button,
+        true
+    );
+
+    try {
+        const sessionId =
+            localStorage.getItem(
+                storageKey
+            );
+
+        if (!sessionId) {
+            throw new Error(
+                "Chybí aktivní situace."
+            );
+        }
+
+
+        const strategy =
+            byId("strategy")
+                .value;
+
+        let total =
+            numberOrNull(
+                byId("totalUnits")
+                    .value
+            );
+
+        let first = null;
+        let second = null;
+        let delay = null;
+
+
+        if (
+            strategy === "NONE"
+        ) {
+            total = 0;
+        }
+
+        else if (
+            strategy === "SINGLE"
+        ) {
             if (
-                !sessionId
+                total === null
+                || total <= 0
             ) {
                 throw new Error(
-                    "Chybí session ID."
+                    "Vyplň celkovou dávku."
                 );
             }
 
+            first = total;
+        }
 
-            const baseline =
+        else {
+            first =
                 numberOrNull(
-                    byId(
-                        "baseline"
-                    ).value
+                    byId("firstDose")
+                        .value
                 );
 
+            second =
+                numberOrNull(
+                    byId("secondDose")
+                        .value
+                );
+
+            delay =
+                intOrNull(
+                    byId("secondDelay")
+                        .value
+                );
 
             if (
-                baseline === null
+                first === null
+                || second === null
+                || delay === null
             ) {
                 throw new Error(
-                    "Vyplň výchozí glykémii."
+                    "U rozdělené dávky "
+                    + "vyplň obě části "
+                    + "i čas druhé dávky."
                 );
             }
 
+            total =
+                first + second;
 
-            const values = {
+            byId("totalUnits")
+                .value =
+                total;
+        }
 
-                glucose_30m:
-                    numberOrNull(
-                        byId(
-                            "g30"
-                        ).value
-                    ),
 
-                glucose_60m:
-                    numberOrNull(
-                        byId(
-                            "g60"
-                        ).value
-                    ),
+        const payload = {
 
-                glucose_90m:
-                    numberOrNull(
-                        byId(
-                            "g90"
-                        ).value
-                    ),
+            strategy:
+                strategy,
 
-                glucose_120m:
-                    numberOrNull(
-                        byId(
-                            "g120"
-                        ).value
-                    ),
+            total_novorapid_units:
+                total,
 
-                glucose_180m:
-                    numberOrNull(
-                        byId(
-                            "g180"
-                        ).value
+            prebolus_minutes:
+                intOrNull(
+                    byId("prebolus")
+                        .value
+                ),
+
+            first_dose_units:
+                first,
+
+            second_dose_units:
+                second,
+
+            second_dose_delay_minutes:
+                delay
+        };
+
+
+        await requestJson(
+            "/decision-sessions/"
+            + sessionId
+            + "/user-plan",
+
+            {
+                method:
+                    "POST",
+
+                body:
+                    JSON.stringify(
+                        payload
                     )
-            };
+            }
+        );
 
 
-            if (
-                Object.values(
-                    values
+        showMessage(
+            "Tvůj plán byl uložen. "
+            + "Shadow stále zůstává skrytý.",
+            "success"
+        );
+
+
+        await loadSession();
+    }
+
+    catch (error) {
+        showMessage(
+            error.message
+        );
+    }
+
+    finally {
+        setBusy(
+            button,
+            false
+        );
+    }
+}
+
+
+async function saveOutcome() {
+    clearMessage();
+
+    const button =
+        byId(
+            "saveOutcomeButton"
+        );
+
+    setBusy(
+        button,
+        true
+    );
+
+    try {
+        const sessionId =
+            localStorage.getItem(
+                storageKey
+            );
+
+        if (!sessionId) {
+            throw new Error(
+                "Chybí aktivní situace."
+            );
+        }
+
+
+        const baseline =
+            numberOrNull(
+                byId("baseline")
+                    .value
+            );
+
+        if (
+            baseline === null
+        ) {
+            throw new Error(
+                "Vyplň výchozí glykémii."
+            );
+        }
+
+
+        const values = {
+
+            glucose_30m:
+                numberOrNull(
+                    byId("g30").value
+                ),
+
+            glucose_60m:
+                numberOrNull(
+                    byId("g60").value
+                ),
+
+            glucose_90m:
+                numberOrNull(
+                    byId("g90").value
+                ),
+
+            glucose_120m:
+                numberOrNull(
+                    byId("g120").value
+                ),
+
+            glucose_180m:
+                numberOrNull(
+                    byId("g180").value
                 )
+        };
+
+
+        if (
+            Object
+                .values(values)
                 .every(
                     value =>
                         value === null
                 )
-            ) {
-                throw new Error(
-                    "Vyplň alespoň jednu "
-                    + "následnou glykémii."
-                );
-            }
-
-
-            const payload = {
-
-                baseline_glucose:
-                    baseline,
-
-                ...values,
-
-                evaluated_at:
-                    new Date()
-                    .toISOString(),
-
-                note:
-                    byId(
-                        "outcomeNote"
-                    ).value.trim()
-                    || null
-            };
-
-
-            const session =
-                await requestJson(
-                    "/decision-sessions/"
-                    + sessionId
-                    + "/outcome",
-                    {
-                        method:
-                            "POST",
-
-                        body:
-                            JSON.stringify(
-                                payload
-                            )
-                    }
-                );
-
-
-            showMessage(
-                "Situace dokončena. "
-                + "Shadow byl odhalen.",
-                "success"
-            );
-
-
-            renderSession(
-                session
-            );
-        }
-
-        catch (
-            error
         ) {
-            showMessage(
-                error.message
+            throw new Error(
+                "Vyplň alespoň jednu "
+                + "následnou glykémii."
             );
         }
 
-        finally {
-            setBusy(
-                button,
-                false
+
+        const payload = {
+
+            baseline_glucose:
+                baseline,
+
+            ...values,
+
+            evaluated_at:
+                new Date()
+                .toISOString(),
+
+            note:
+                byId("outcomeNote")
+                    .value
+                    .trim()
+                || null
+        };
+
+
+        const session =
+            await requestJson(
+                "/decision-sessions/"
+                + sessionId
+                + "/outcome",
+
+                {
+                    method:
+                        "POST",
+
+                    body:
+                        JSON.stringify(
+                            payload
+                        )
+                }
             );
-        }
-    }
 
 
-    function clearSituationForm() {
-        byId(
-            "decisionAt"
-        ).value =
-            localDateTimeValue();
-
-
-        byId(
-            "glucose"
-        ).value = "";
-
-
-        byId(
-            "trend"
-        ).value = "";
-
-
-        byId(
-            "delta15"
-        ).value = "";
-
-
-        byId(
-            "delta30"
-        ).value = "";
-
-
-        byId(
-            "delta60"
-        ).value = "";
-
-
-        byId(
-            "rapidDoseList"
-        ).innerHTML = "";
-
-
-        byId(
-            "tresibaUnits"
-        ).value = "";
-
-
-        byId(
-            "tresibaAt"
-        ).value = "";
-
-
-        byId(
-            "activityType"
-        ).value = "";
-
-
-        byId(
-            "activityIntensity"
-        ).value = "";
-
-
-        byId(
-            "activityStart"
-        ).value = "";
-
-
-        byId(
-            "activityEnd"
-        ).value = "";
-
-
-        byId(
-            "situationNote"
-        ).value = "";
-    }
-
-
-    function clearOutcomeForm() {
-        byId(
-            "baseline"
-        ).value = "";
-
-        byId(
-            "g30"
-        ).value = "";
-
-        byId(
-            "g60"
-        ).value = "";
-
-        byId(
-            "g90"
-        ).value = "";
-
-        byId(
-            "g120"
-        ).value = "";
-
-        byId(
-            "g180"
-        ).value = "";
-
-        byId(
-            "outcomeNote"
-        ).value = "";
-    }
-
-
-    function clearPlanForm() {
-        byId(
-            "strategy"
-        ).value =
-            "SINGLE";
-
-        byId(
-            "totalUnits"
-        ).value = "";
-
-        byId(
-            "prebolus"
-        ).value = "";
-
-        byId(
-            "firstDose"
-        ).value = "";
-
-        byId(
-            "secondDose"
-        ).value = "";
-
-        byId(
-            "secondDelay"
-        ).value = "";
-
-        updatePlanFields();
-    }
-
-
-    function clearLocalSession() {
-        localStorage.removeItem(
-            storageKey
+        showMessage(
+            "Situace je dokončena. "
+            + "Shadow byl odhalen.",
+            "success"
         );
 
-        clearMessage();
 
-        clearSituationForm();
-        clearPlanForm();
-        clearOutcomeForm();
-
-        showNoSession();
+        renderSession(
+            session
+        );
     }
 
+    catch (error) {
+        showMessage(
+            error.message
+        );
+    }
 
-    byId(
-        "createSessionButton"
-    ).addEventListener(
+    finally {
+        setBusy(
+            button,
+            false
+        );
+    }
+}
+
+
+function clearForms() {
+    byId("decisionAt")
+        .value =
+        localDateTimeValue();
+
+    [
+        "glucose",
+        "delta15",
+        "delta30",
+        "delta60",
+        "mealCarbs",
+        "mealDescription",
+        "tresibaUnits",
+        "tresibaAt",
+        "activityType",
+        "activityStart",
+        "activityEnd",
+        "situationNote",
+        "totalUnits",
+        "prebolus",
+        "firstDose",
+        "secondDose",
+        "secondDelay",
+        "baseline",
+        "g30",
+        "g60",
+        "g90",
+        "g120",
+        "g180",
+        "outcomeNote"
+    ].forEach(
+        id =>
+            byId(id).value = ""
+    );
+
+    byId("trend").value = "";
+    byId("activityIntensity").value = "";
+    byId("strategy").value = "SINGLE";
+
+    byId("mealPlanned")
+        .checked =
+        false;
+
+    byId("rapidDoseList")
+        .innerHTML =
+        "";
+
+    updateMealFields();
+    updatePlanFields();
+}
+
+
+function clearLocalSession() {
+    localStorage.removeItem(
+        storageKey
+    );
+
+    clearMessage();
+    clearForms();
+    showNoSession();
+}
+
+
+byId("createSessionButton")
+    .addEventListener(
         "click",
         createSession
     );
 
 
-    byId(
-        "savePlanButton"
-    ).addEventListener(
+byId("savePlanButton")
+    .addEventListener(
         "click",
         savePlan
     );
 
 
-    byId(
-        "saveOutcomeButton"
-    ).addEventListener(
+byId("saveOutcomeButton")
+    .addEventListener(
         "click",
         saveOutcome
     );
 
 
-    byId(
-        "strategy"
-    ).addEventListener(
+byId("strategy")
+    .addEventListener(
         "change",
         updatePlanFields
     );
 
 
-    byId(
-        "refreshButton"
-    ).addEventListener(
+byId("mealPlanned")
+    .addEventListener(
+        "change",
+        updateMealFields
+    );
+
+
+byId("refreshButton")
+    .addEventListener(
         "click",
         loadSession
     );
 
 
-    byId(
-        "addRapidDoseButton"
-    ).addEventListener(
+byId("addRapidDoseButton")
+    .addEventListener(
         "click",
-        () => {
-            addRapidDoseRow();
-        }
+        () =>
+            addRapidDoseRow()
     );
 
 
-    byId(
-        "newSessionButton"
-    ).addEventListener(
+byId("newSessionButton")
+    .addEventListener(
         "click",
         () => {
             if (
                 confirm(
                     "Opravdu chceš zahodit "
-                    + "lokální odkaz na tuto session?"
+                    + "lokální odkaz "
+                    + "na tuto situaci?"
                 )
             ) {
                 clearLocalSession();
@@ -3009,23 +2775,21 @@
     );
 
 
-    byId(
-        "finishButton"
-    ).addEventListener(
+byId("finishButton")
+    .addEventListener(
         "click",
         clearLocalSession
     );
 
 
-    byId(
-        "decisionAt"
-    ).value =
-        localDateTimeValue();
+byId("decisionAt")
+    .value =
+    localDateTimeValue();
 
 
-    updatePlanFields();
-
-    loadSession();
+updateMealFields();
+updatePlanFields();
+loadSession();
 
 </script>
 
