@@ -2,6 +2,7 @@
 from sqlalchemy import text
 
 from app.database import engine
+
 from app.routers.users import (
     router as users_router,
 )
@@ -23,6 +24,9 @@ from app.routers.situations import (
 from app.routers.decision_sessions import (
     router as decision_sessions_router,
 )
+from app.routers.dexcom import (
+    router as dexcom_router,
+)
 
 
 app = FastAPI(
@@ -34,23 +38,33 @@ app = FastAPI(
 app.include_router(
     users_router
 )
+
 app.include_router(
     glucose_router
 )
+
 app.include_router(
     insulin_router
 )
+
 app.include_router(
     meals_router
 )
+
 app.include_router(
     activities_router
 )
+
 app.include_router(
     situations_router
 )
+
 app.include_router(
     decision_sessions_router
+)
+
+app.include_router(
+    dexcom_router
 )
 
 
@@ -58,7 +72,10 @@ app.include_router(
 def root():
     return {
         "message":
-            "Diabetes Assistant API is running"
+            (
+                "Diabetes Assistant "
+                "API is running"
+            )
     }
 
 
