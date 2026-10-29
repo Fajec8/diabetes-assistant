@@ -1,4 +1,9 @@
 import uuid
+from datetime import (
+    datetime,
+    timedelta,
+    timezone,
+)
 
 from fastapi import (
     APIRouter,
@@ -39,6 +44,70 @@ router = APIRouter(
     prefix="/dexcom",
     tags=["Dexcom"],
 )
+
+
+def _utc_now() -> datetime:
+    return datetime.now(
+        timezone.utc
+    )
+
+
+def _nearest_reading(
+    readings: list[DexcomGlucoseReading],
+    target_time: datetime,
+    tolerance_minutes: int = 7,
+) -> DexcomGlucoseReading | None:
+    if not readings:
+        return None
+
+    nearest = min(
+        readings,
+        key=lambda reading: abs(
+            (
+                reading.system_time
+                - target_time
+            ).total_seconds()
+        ),
+    )
+
+    difference_seconds = abs(
+        (
+            nearest.system_time
+            - target_time
+        ).total_seconds()
+    )
+
+    if (
+        difference_seconds
+        > tolerance_minutes * 60
+    ):
+        return None
+
+    return nearest
+
+
+def _reading_payload(
+    reading: DexcomGlucoseReading | None,
+) -> dict | None:
+    if reading is None:
+        return None
+
+    return {
+        "system_time":
+            reading.system_time,
+
+        "value_mg_dl":
+            reading.value_mg_dl,
+
+        "value_mmol_l":
+            reading.value_mmol_l,
+
+        "trend":
+            reading.trend,
+
+        "trend_rate_mg_dl_min":
+            reading.trend_rate_mg_dl_min,
+    }
 
 
 @router.get("/status")
@@ -573,4 +642,220 @@ def latest_dexcom_readings(
                 for reading
                 in readings
             ],
+    }
+
+
+@router.get(
+    "/context/{user_id}"
+)
+def dexcom_context(
+    user_id: uuid.UUID,
+    db: Session = Depends(
+        get_db
+    ),
+):
+    connection = db.scalar(
+        select(
+            DexcomConnection
+        )
+        .where(
+            DexcomConnection.user_id
+            == user_id
+        )
+    )
+
+    if connection is None:
+        raise HTTPException(
+            status_code=404,
+            detail=(
+                "Dexcom is not connected "
+                "for this user"
+            ),
+        )
+
+    latest = db.scalar(
+        select(
+            DexcomGlucoseReading
+        )
+        .where(
+            DexcomGlucoseReading.user_id
+            == user_id
+        )
+        .order_by(
+            DexcomGlucoseReading
+            .system_time
+            .desc()
+        )
+        .limit(1)
+    )
+
+    if latest is None:
+        raise HTTPException(
+            status_code=404,
+            detail=(
+                "No Dexcom glucose readings "
+                "are stored for this user"
+            ),
+        )
+
+    start_time = (
+        latest.system_time
+        - timedelta(
+            minutes=70
+        )
+    )
+
+    readings = (
+        db.scalars(
+            select(
+                DexcomGlucoseReading
+            )
+            .where(
+                DexcomGlucoseReading.user_id
+                == user_id
+            )
+            .where(
+                DexcomGlucoseReading.system_time
+                >= start_time
+            )
+            .where(
+                DexcomGlucoseReading.system_time
+                <= latest.system_time
+            )
+            .order_by(
+                DexcomGlucoseReading
+                .system_time
+                .desc()
+            )
+        )
+        .all()
+    )
+
+    reading_15 = _nearest_reading(
+        readings,
+        latest.system_time
+        - timedelta(
+            minutes=15
+        ),
+    )
+
+    reading_30 = _nearest_reading(
+        readings,
+        latest.system_time
+        - timedelta(
+            minutes=30
+        ),
+    )
+
+    reading_60 = _nearest_reading(
+        readings,
+        latest.system_time
+        - timedelta(
+            minutes=60
+        ),
+    )
+
+    data_age_minutes = round(
+        (
+            _utc_now()
+            - latest.system_time
+        ).total_seconds()
+        / 60,
+        1,
+    )
+
+    delta_15 = (
+        round(
+            latest.value_mmol_l
+            - reading_15.value_mmol_l,
+            2,
+        )
+        if (
+            latest.value_mmol_l
+            is not None
+            and reading_15 is not None
+            and reading_15.value_mmol_l
+            is not None
+        )
+        else None
+    )
+
+    delta_30 = (
+        round(
+            latest.value_mmol_l
+            - reading_30.value_mmol_l,
+            2,
+        )
+        if (
+            latest.value_mmol_l
+            is not None
+            and reading_30 is not None
+            and reading_30.value_mmol_l
+            is not None
+        )
+        else None
+    )
+
+    delta_60 = (
+        round(
+            latest.value_mmol_l
+            - reading_60.value_mmol_l,
+            2,
+        )
+        if (
+            latest.value_mmol_l
+            is not None
+            and reading_60 is not None
+            and reading_60.value_mmol_l
+            is not None
+        )
+        else None
+    )
+
+    return {
+        "connected":
+            True,
+
+        "environment":
+            connection.environment,
+
+        "source":
+            "DEXCOM",
+
+        "latest_system_time":
+            latest.system_time,
+
+        "data_age_minutes":
+            data_age_minutes,
+
+        "glucose_now":
+            _reading_payload(
+                latest
+            ),
+
+        "glucose_15m_ago":
+            _reading_payload(
+                reading_15
+            ),
+
+        "glucose_30m_ago":
+            _reading_payload(
+                reading_30
+            ),
+
+        "glucose_60m_ago":
+            _reading_payload(
+                reading_60
+            ),
+
+        "internal_deltas": {
+            "delta_15m":
+                delta_15,
+
+            "delta_30m":
+                delta_30,
+
+            "delta_60m":
+                delta_60,
+        },
     }
