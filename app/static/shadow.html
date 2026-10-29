@@ -305,7 +305,7 @@
 
         <div id="mealFields" class="hidden">
             <div class="info">
-                Tuto situaci normálně uložíme včetně jídla a tvého plánu. Současný Shadow V1.1 ale plánované jídlo ještě nevyhodnocuje, takže u této situace zatím skončí jako <strong>ABSTAIN</strong>.
+                Plánované jídlo vyhodnocuje meal model <strong>SHADOW_V2_MEAL_4</strong>. Shadow výsledek se spočítá při uložení situace, ale zůstane skrytý, dokud nedoplníš svůj plán a následný výsledek situace.
             </div>
             <div class="grid">
                 <div>
@@ -324,7 +324,7 @@
         <hr class="separator">
 
         <h3>NovoRapid podaný před touto situací</h3>
-        <p class="muted">Přidej všechny relevantní předchozí dávky přibližně za posledních 6 hodin. Pokud žádná nebyla, nic nepřidávej.</p>
+        <p class="muted">Přidej všechny relevantní předchozí dávky přibližně za posledních 6 hodin. Pokud jsou synchronizovaná data opožděná, doplň hlavně dávky od poslední synchronizace. Pokud žádná nebyla, nic nepřidávej.</p>
         <div id="rapidDoseList"></div>
         <button id="addRapidDoseButton" class="secondary" type="button">+ Přidat předchozí NovoRapid</button>
 
@@ -727,7 +727,12 @@ function readableAbstainReason(reason) {
     const translations = {
         MEAL_CONTEXT_NOT_SUPPORTED_V1: "Shadow V1.1 zatím neumí vyhodnocovat plánované jídlo.",
         INSUFFICIENT_EVIDENCE_V1: "Nebylo nalezeno dost dostatečně silných historických případů.",
-        MISSING_CURRENT_GLUCOSE_V1: "Chyběla aktuální glykémie."
+        MISSING_CURRENT_GLUCOSE_V1: "Chyběla aktuální glykémie.",
+        MISSING_PLANNED_MEAL_V2: "Chybí plánované jídlo pro meal model.",
+        MISSING_PLANNED_MEAL_CARBS_V2: "U plánovaného jídla chybí množství sacharidů.",
+        MISSING_CURRENT_GLUCOSE_V2: "Chyběla aktuální glykémie.",
+        INSUFFICIENT_EVIDENCE_V2_MEAL: "Nebylo nalezeno dost dostatečně silných podobných historických případů.",
+        DOSE_DISAGREEMENT_V2_MEAL: "Podobné historické případy se příliš rozcházejí v dávce, takže Shadow raději neodhadoval."
     };
     return translations[reason] || reason || "—";
 }
@@ -763,6 +768,7 @@ function displayResult(session) {
         <div class="result-box">
             <div class="result-row"><span>Můj plán</span><span class="result-value">${userText}</span></div>
             <div class="result-row"><span>Skrytý Shadow</span><span class="result-value">${systemValue}</span></div>
+            <div class="result-row"><span>Verze modelu</span><span class="result-value">${system?.model_version || session.system_shadow?.model_version || "—"}</span></div>
             ${abstainReason}
             <div class="result-row"><span>Rozdíl mezi dávkami</span><span class="result-value">${difference}</span></div>
             <div class="result-row"><span>Počet podporujících případů</span><span class="result-value">${system?.support_count ?? "—"}</span></div>
