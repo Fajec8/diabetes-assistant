@@ -7,6 +7,7 @@ from fastapi import (
     APIRouter,
     Depends,
     HTTPException,
+    Response,
     status,
 )
 from fastapi.responses import FileResponse
@@ -20,6 +21,12 @@ from app.schemas.decision import (
     DecisionOutcomeCreate,
     DecisionSessionCreate,
     DecisionSessionResponse,
+)
+from app.services.active_decision_session import (
+    get_active_decision_session_id,
+)
+from app.services.cancel_decision_session import (
+    cancel_decision_session,
 )
 from app.services.decision_sessions import (
     create_decision_outcome,
@@ -222,6 +229,75 @@ def create_outcome(
                     exc
                 ),
         ) from exc
+
+
+@router.post(
+    "/{session_id}/cancel",
+    status_code=
+        status.HTTP_204_NO_CONTENT,
+)
+def cancel_session(
+    session_id: uuid.UUID,
+    db: Session = Depends(
+        get_db
+    ),
+):
+    try:
+        cancel_decision_session(
+            db=db,
+            session_id=session_id,
+        )
+
+    except KeyError as exc:
+        raise HTTPException(
+            status_code=404,
+            detail=
+                _error_message(
+                    exc
+                ),
+        ) from exc
+
+    except RuntimeError as exc:
+        raise HTTPException(
+            status_code=409,
+            detail=
+                _error_message(
+                    exc
+                ),
+        ) from exc
+
+    return Response(
+        status_code=
+            status.HTTP_204_NO_CONTENT
+    )
+
+
+@router.get(
+    "/active/{user_id}",
+    response_model=
+        DecisionSessionResponse
+        | None,
+)
+def read_active_session(
+    user_id: uuid.UUID,
+    db: Session = Depends(
+        get_db
+    ),
+):
+    session_id = (
+        get_active_decision_session_id(
+            db=db,
+            user_id=user_id,
+        )
+    )
+
+    if session_id is None:
+        return None
+
+    return get_decision_session(
+        db=db,
+        session_id=session_id,
+    )
 
 
 @router.get(

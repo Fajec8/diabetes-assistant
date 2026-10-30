@@ -673,7 +673,16 @@ function showSessionHeader(session) {
     byId("sessionStatus").textContent = translations[session.status] || session.status;
     byId("sessionIdBox").textContent = "Session: " + session.id;
     byId("refreshButton").classList.remove("hidden");
-    byId("newSessionButton").classList.remove("hidden");
+
+    const canCancel = [
+        "WAITING_USER_PLAN",
+        "WAITING_OUTCOME"
+    ].includes(session.status);
+
+    byId("newSessionButton").classList.toggle(
+        "hidden",
+        !canCancel
+    );
 }
 
 function addRapidDoseRow(units = "", datetime = "") {
@@ -813,20 +822,71 @@ function renderSession(session) {
     showMessage("Neočekávaný stav situace: " + session.status);
 }
 
+function isActiveSessionStatus(status) {
+    return [
+        "WAITING_USER_PLAN",
+        "WAITING_OUTCOME"
+    ].includes(status);
+}
+
+function isFreshActiveSession(session) {
+    if (!isActiveSessionStatus(session?.status)) return true;
+    if (!session?.created_at) return false;
+
+    const createdAt = new Date(session.created_at);
+    if (Number.isNaN(createdAt.getTime())) return false;
+
+    const ageHours = (Date.now() - createdAt.getTime()) / 3600000;
+    return ageHours <= 24;
+}
+
 async function loadSession() {
     clearMessage();
     const sessionId = localStorage.getItem(storageKey);
+    let localLoadError = null;
 
-    if (!sessionId) {
-        showNoSession();
-        return;
+    if (sessionId) {
+        try {
+            const session = await requestJson("/decision-sessions/" + sessionId);
+
+            if (session.status === "CANCELLED") {
+                localStorage.removeItem(storageKey);
+            } else if (isFreshActiveSession(session)) {
+                renderSession(session);
+                return;
+            }
+        } catch (error) {
+            localLoadError = error;
+        }
     }
 
     try {
-        const session = await requestJson("/decision-sessions/" + sessionId);
-        renderSession(session);
+        const activeSession = await requestJson(
+            "/decision-sessions/active/" + currentUserId()
+        );
+
+        if (activeSession) {
+            localStorage.setItem(storageKey, activeSession.id);
+            showMessage(
+                "Rozpracovaná situace byla automaticky obnovena.",
+                "success"
+            );
+            renderSession(activeSession);
+            return;
+        }
+
+        if (sessionId) {
+            localStorage.removeItem(storageKey);
+        }
+
+        showNoSession();
     } catch (error) {
-        showMessage("Situaci se nepodařilo načíst: " + error.message);
+        const detail = localLoadError
+            ? localLoadError.message + " / " + error.message
+            : error.message;
+
+        showNoSession();
+        showMessage("Situaci se nepodařilo načíst: " + detail);
     }
 }
 
@@ -1064,6 +1124,46 @@ function clearLocalSession() {
     showNoSession();
 }
 
+async function cancelCurrentSession() {
+    const sessionId = localStorage.getItem(storageKey);
+
+    if (!sessionId) {
+        clearLocalSession();
+        return;
+    }
+
+    const confirmed = confirm(
+        "Opravdu chceš tuto rozpracovanou situaci zrušit a začít novou?"
+    );
+
+    if (!confirmed) return;
+
+    const button = byId("newSessionButton");
+    setBusy(button, true);
+    clearMessage();
+
+    try {
+        await requestJson(
+            "/decision-sessions/" + sessionId + "/cancel",
+            {
+                method: "POST"
+            }
+        );
+
+        clearLocalSession();
+        showMessage(
+            "Rozpracovaná situace byla zrušena. Můžeš začít novou.",
+            "success"
+        );
+    } catch (error) {
+        showMessage(
+            "Situaci se nepodařilo zrušit: " + error.message
+        );
+    } finally {
+        setBusy(button, false);
+    }
+}
+
 byId("createSessionButton").addEventListener("click", createSession);
 byId("savePlanButton").addEventListener("click", savePlan);
 byId("saveOutcomeButton").addEventListener("click", saveOutcome);
@@ -1076,11 +1176,10 @@ byId("reloadDexcomButton").addEventListener("click", loadDexcomContext);
 byId("connectDexcomButton").addEventListener("click", () => {
     window.location.href = "/dexcom/connect/" + currentUserId();
 });
-byId("newSessionButton").addEventListener("click", () => {
-    if (confirm("Opravdu chceš zahodit lokální odkaz na tuto situaci?")) {
-        clearLocalSession();
-    }
-});
+byId("newSessionButton").addEventListener(
+    "click",
+    cancelCurrentSession
+);
 byId("finishButton").addEventListener("click", clearLocalSession);
 
 byId("decisionAt").value = localDateTimeValue();
