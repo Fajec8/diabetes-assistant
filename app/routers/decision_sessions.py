@@ -25,6 +25,9 @@ from app.schemas.decision import (
 from app.services.active_decision_session import (
     get_active_decision_session_id,
 )
+from app.services.active_decision_sessions import (
+    get_active_decision_session_ids,
+)
 from app.services.cancel_decision_session import (
     cancel_decision_session,
 )
@@ -270,6 +273,36 @@ def cancel_session(
         status_code=
             status.HTTP_204_NO_CONTENT
     )
+
+
+@router.get(
+    "/active/{user_id}/all",
+    response_model=
+        list[
+            DecisionSessionResponse
+        ],
+)
+def read_active_sessions(
+    user_id: uuid.UUID,
+    db: Session = Depends(
+        get_db
+    ),
+):
+    session_ids = (
+        get_active_decision_session_ids(
+            db=db,
+            user_id=user_id,
+        )
+    )
+
+    return [
+        get_decision_session(
+            db=db,
+            session_id=session_id,
+        )
+        for session_id
+        in session_ids
+    ]
 
 
 @router.get(

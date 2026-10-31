@@ -171,6 +171,43 @@
             grid-template-columns: 1fr 1fr;
             gap: 10px;
         }
+
+        .active-sessions {
+            display: grid;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .active-session-item {
+            width: 100%;
+            margin: 0;
+            padding: 11px 12px;
+            border: 1px solid #d0d5dd;
+            border-radius: 11px;
+            background: #f8f9fa;
+            color: #17202a;
+            text-align: left;
+            font-size: 14px;
+            font-weight: 400;
+        }
+
+        .active-session-item.selected {
+            border-color: #17202a;
+            box-shadow: 0 0 0 1px #17202a;
+            background: white;
+        }
+
+        .active-session-main {
+            font-weight: 700;
+            margin-bottom: 3px;
+        }
+
+        .active-session-meta {
+            color: #667085;
+            font-size: 12px;
+            line-height: 1.35;
+        }
+
         @media (max-width: 600px) {
             .page { padding: 10px 10px 40px; }
             .card { padding: 15px; border-radius: 14px; }
@@ -192,12 +229,62 @@
 
     <div id="message" class="hidden"></div>
 
-    <div class="card">
+        <div class="card">
         <h2>Aktuální situace</h2>
-        <div id="sessionStatus" class="status">Žádná aktivní situace</div>
-        <div id="sessionIdBox" class="muted">Začni zadáním nové situace.</div>
-        <button id="refreshButton" class="secondary hidden" type="button">Obnovit stav</button>
-        <button id="newSessionButton" class="danger hidden" type="button">Zahodit tuto situaci a začít novou</button>
+
+        <div id="sessionStatus" class="status">
+            Žádná aktivní situace
+        </div>
+
+        <div id="sessionIdBox" class="muted">
+            Začni zadáním nové situace.
+        </div>
+
+        <div
+            id="activeSessionsSection"
+            class="hidden"
+        >
+            <hr class="separator">
+
+            <h3 style="margin-top:0;">
+                Rozpracované situace
+                <span id="activeSessionsCount"></span>
+            </h3>
+
+            <p class="mini">
+                Situace mohou běžet současně.
+                Kliknutím se mezi nimi přepneš.
+            </p>
+
+            <div
+                id="activeSessionsList"
+                class="active-sessions"
+            ></div>
+        </div>
+
+        <button
+            id="startAnotherSessionButton"
+            class="secondary hidden"
+            type="button"
+        >
+            + Začít další situaci
+        </button>
+
+        <button
+            id="refreshButton"
+            class="secondary hidden"
+            type="button"
+        >
+            Obnovit stav
+        </button>
+
+        <button
+            id="newSessionButton"
+            class="danger hidden"
+            type="button"
+        >
+            Zrušit tuto situaci
+        </button>
     </div>
 
     <div id="dexcomCard" class="card">
@@ -419,6 +506,11 @@
     <div id="outcomeCard" class="card hidden">
         <h2>3. Jak situace dopadla?</h2>
         <p class="muted">Doplň glykémii po rozhodnutí. Nemusíš mít všechny hodnoty.</p>
+        <div
+            id="overlapWarning"
+            class="warning hidden"
+        ></div>
+
         <div class="grid">
             <div>
                 <label for="baseline">Glykémie na začátku</label>
@@ -463,6 +555,12 @@
 const LOCAL_USER_ID = "d78bf688-ec52-495c-b390-9e6747fedb47";
 const CLOUD_USER_ID = "a55893d8-7f81-4ff0-9393-3e731cdf431b";
 const storageKey = "diabetesShadowSessionId";
+
+const newSessionModeKey =
+    "diabetesShadowNewSessionMode";
+
+let activeSessions = [];
+
 let dexcomContext = null;
 
 const byId = id => document.getElementById(id);
@@ -655,33 +753,99 @@ function resetSections() {
 
 function showNoSession() {
     resetSections();
-    byId("situationCard").classList.remove("hidden");
-    byId("sessionStatus").textContent = "Žádná aktivní situace";
-    byId("sessionIdBox").textContent = "Začni zadáním nové situace.";
-    byId("refreshButton").classList.add("hidden");
-    byId("newSessionButton").classList.add("hidden");
+
+    byId(
+        "situationCard"
+    ).classList.remove(
+        "hidden"
+    );
+
+    byId(
+        "sessionStatus"
+    ).textContent = (
+        "Nová situace"
+    );
+
+    byId(
+        "sessionIdBox"
+    ).textContent = (
+        "Zadej novou situaci."
+    );
+
+    byId(
+        "refreshButton"
+    ).classList.add(
+        "hidden"
+    );
+
+    byId(
+        "startAnotherSessionButton"
+    ).classList.add(
+        "hidden"
+    );
+
+    byId(
+        "newSessionButton"
+    ).classList.add(
+        "hidden"
+    );
 }
 
 function showSessionHeader(session) {
     const translations = {
-        WAITING_USER_PLAN: "Čeká na můj plán",
-        WAITING_OUTCOME: "Čeká na výsledek situace",
-        COMPLETED: "Dokončeno",
-        CANCELLED: "Zrušeno"
+        WAITING_USER_PLAN:
+            "Čeká na můj plán",
+
+        WAITING_OUTCOME:
+            "Čeká na výsledek situace",
+
+        COMPLETED:
+            "Dokončeno",
+
+        CANCELLED:
+            "Zrušeno"
     };
 
-    byId("sessionStatus").textContent = translations[session.status] || session.status;
-    byId("sessionIdBox").textContent = "Session: " + session.id;
-    byId("refreshButton").classList.remove("hidden");
+    byId(
+        "sessionStatus"
+    ).textContent = (
+        translations[
+            session.status
+        ]
+        || session.status
+    );
 
-    const canCancel = [
-        "WAITING_USER_PLAN",
-        "WAITING_OUTCOME"
-    ].includes(session.status);
+    byId(
+        "sessionIdBox"
+    ).textContent = (
+        "Session: "
+        + session.id
+    );
 
-    byId("newSessionButton").classList.toggle(
+    byId(
+        "refreshButton"
+    ).classList.remove(
+        "hidden"
+    );
+
+    const active = (
+        isActiveSessionStatus(
+            session.status
+        )
+    );
+
+    byId(
+        "startAnotherSessionButton"
+    ).classList.toggle(
         "hidden",
-        !canCancel
+        !active
+    );
+
+    byId(
+        "newSessionButton"
+    ).classList.toggle(
+        "hidden",
+        !active
     );
 }
 
@@ -797,29 +961,94 @@ function displayResult(session) {
 
 function renderSession(session) {
     resetSections();
-    showSessionHeader(session);
 
-    if (session.status === "WAITING_USER_PLAN") {
-        byId("planCard").classList.remove("hidden");
+    showSessionHeader(
+        session
+    );
+
+    renderActiveSessions(
+        activeSessions
+    );
+
+    if (
+        session.status
+        === "WAITING_USER_PLAN"
+    ) {
+        resetOverlapOutcomeGuard();
+
+        byId(
+            "planCard"
+        ).classList.remove(
+            "hidden"
+        );
+
         return;
     }
 
-    if (session.status === "WAITING_OUTCOME") {
-        byId("outcomeCard").classList.remove("hidden");
-        if (!byId("baseline").value) {
-            const baseline = session.input_snapshot?.glucose?.current;
-            if (baseline !== null && baseline !== undefined) byId("baseline").value = baseline;
+    if (
+        session.status
+        === "WAITING_OUTCOME"
+    ) {
+        byId(
+            "outcomeCard"
+        ).classList.remove(
+            "hidden"
+        );
+
+        if (
+            !byId(
+                "baseline"
+            ).value
+        ) {
+            const baseline = (
+                session
+                .input_snapshot
+                ?.glucose
+                ?.current
+            );
+
+            if (
+                baseline !== null
+                && baseline !== undefined
+            ) {
+                byId(
+                    "baseline"
+                ).value = baseline;
+            }
         }
+
+        applyOverlapOutcomeGuard(
+            session
+        );
+
         return;
     }
 
-    if (session.status === "COMPLETED") {
-        byId("resultCard").classList.remove("hidden");
-        displayResult(session);
+    if (
+        session.status
+        === "COMPLETED"
+    ) {
+        resetOverlapOutcomeGuard();
+
+        byId(
+            "resultCard"
+        ).classList.remove(
+            "hidden"
+        );
+
+        displayResult(
+            session
+        );
+
         return;
     }
 
-    showMessage("Neočekávaný stav situace: " + session.status);
+    resetOverlapOutcomeGuard();
+
+    showMessage(
+        "Neočekávaný stav situace: "
+        + session.status
+    );
 }
 
 function isActiveSessionStatus(status) {
@@ -840,53 +1069,645 @@ function isFreshActiveSession(session) {
     return ageHours <= 24;
 }
 
+function activeSessionStatusText(
+    status
+) {
+    const translations = {
+        WAITING_USER_PLAN:
+            "čeká na můj plán",
+
+        WAITING_OUTCOME:
+            "čeká na výsledek"
+    };
+
+    return (
+        translations[
+            status
+        ]
+        || status
+    );
+}
+
+
+function activeSessionTitle(
+    session
+) {
+    const date = new Date(
+        session.decision_at
+    );
+
+    const time = (
+        Number.isNaN(
+            date.getTime()
+        )
+        ? "neznámý čas"
+        : date.toLocaleString(
+            "cs-CZ",
+            {
+                day: "2-digit",
+                month: "2-digit",
+                hour: "2-digit",
+                minute: "2-digit"
+            }
+        )
+    );
+
+    const meal = (
+        session
+        .input_snapshot
+        ?.planned_meal
+    );
+
+    const parts = [
+        time
+    ];
+
+    if (
+        meal?.carbohydrates_g
+        !== null
+        && meal?.carbohydrates_g
+        !== undefined
+    ) {
+        parts.push(
+            meal.carbohydrates_g
+            + " g"
+        );
+    }
+
+    if (
+        meal?.description
+    ) {
+        parts.push(
+            meal.description
+        );
+    }
+
+    return parts.join(
+        " · "
+    );
+}
+
+
+function renderActiveSessions(
+    sessions
+) {
+    activeSessions = (
+        sessions
+        || []
+    );
+
+    const section = byId(
+        "activeSessionsSection"
+    );
+
+    const list = byId(
+        "activeSessionsList"
+    );
+
+    const count = byId(
+        "activeSessionsCount"
+    );
+
+    list.innerHTML = "";
+
+    if (
+        activeSessions.length
+        === 0
+    ) {
+        section.classList.add(
+            "hidden"
+        );
+
+        count.textContent = "";
+
+        return;
+    }
+
+    section.classList.remove(
+        "hidden"
+    );
+
+    count.textContent = (
+        "("
+        + activeSessions.length
+        + ")"
+    );
+
+    const selectedId = (
+        localStorage.getItem(
+            storageKey
+        )
+    );
+
+    for (
+        const session
+        of activeSessions
+    ) {
+        const button = (
+            document.createElement(
+                "button"
+            )
+        );
+
+        button.type = "button";
+
+        button.className = (
+            "active-session-item"
+        );
+
+        if (
+            session.id
+            === selectedId
+        ) {
+            button.classList.add(
+                "selected"
+            );
+        }
+
+        const main = (
+            document.createElement(
+                "div"
+            )
+        );
+
+        main.className = (
+            "active-session-main"
+        );
+
+        main.textContent = (
+            activeSessionTitle(
+                session
+            )
+        );
+
+        const meta = (
+            document.createElement(
+                "div"
+            )
+        );
+
+        meta.className = (
+            "active-session-meta"
+        );
+
+        meta.textContent = (
+            activeSessionStatusText(
+                session.status
+            )
+        );
+
+        button.appendChild(
+            main
+        );
+
+        button.appendChild(
+            meta
+        );
+
+        button.addEventListener(
+            "click",
+            () => {
+                switchSession(
+                    session.id
+                );
+            }
+        );
+
+        list.appendChild(
+            button
+        );
+    }
+}
+
+
+async function loadActiveSessions() {
+    const sessions = (
+        await requestJson(
+            "/decision-sessions/active/"
+            + currentUserId()
+            + "/all"
+        )
+    );
+
+    activeSessions = (
+        sessions
+        || []
+    ).filter(
+        isFreshActiveSession
+    );
+
+    renderActiveSessions(
+        activeSessions
+    );
+
+    return activeSessions;
+}
+
+
+async function switchSession(
+    sessionId
+) {
+    clearMessage();
+
+    sessionStorage.removeItem(
+        newSessionModeKey
+    );
+
+    localStorage.setItem(
+        storageKey,
+        sessionId
+    );
+
+    clearForms();
+
+    try {
+        const session = (
+            await requestJson(
+                "/decision-sessions/"
+                + sessionId
+            )
+        );
+
+        renderSession(
+            session
+        );
+
+        renderActiveSessions(
+            activeSessions
+        );
+    } catch (error) {
+        showMessage(
+            "Situaci se nepodařilo načíst: "
+            + error.message
+        );
+    }
+}
+
+
+function resetOverlapOutcomeGuard() {
+    const warning = byId(
+        "overlapWarning"
+    );
+
+    warning.classList.add(
+        "hidden"
+    );
+
+    warning.textContent = "";
+
+    for (
+        const id
+        of [
+            "g30",
+            "g60",
+            "g90",
+            "g120",
+            "g180"
+        ]
+    ) {
+        byId(
+            id
+        ).disabled = false;
+    }
+}
+
+
+function findNextActiveSession(
+    session
+) {
+    const currentTime = (
+        new Date(
+            session.decision_at
+        ).getTime()
+    );
+
+    const newer = (
+        activeSessions
+        .filter(
+            candidate => {
+                if (
+                    candidate.id
+                    === session.id
+                ) {
+                    return false;
+                }
+
+                const candidateTime = (
+                    new Date(
+                        candidate.decision_at
+                    ).getTime()
+                );
+
+                return (
+                    Number.isFinite(
+                        candidateTime
+                    )
+                    && candidateTime
+                    > currentTime
+                );
+            }
+        )
+        .sort(
+            (
+                first,
+                second
+            ) => (
+                new Date(
+                    first.decision_at
+                )
+                - new Date(
+                    second.decision_at
+                )
+            )
+        )
+    );
+
+    return (
+        newer[
+            0
+        ]
+        || null
+    );
+}
+
+
+function applyOverlapOutcomeGuard(
+    session
+) {
+    resetOverlapOutcomeGuard();
+
+    const nextSession = (
+        findNextActiveSession(
+            session
+        )
+    );
+
+    if (!nextSession) {
+        return;
+    }
+
+    const currentTime = (
+        new Date(
+            session.decision_at
+        ).getTime()
+    );
+
+    const nextTime = (
+        new Date(
+            nextSession.decision_at
+        ).getTime()
+    );
+
+    const gapMinutes = (
+        (nextTime - currentTime)
+        / 60000
+    );
+
+    if (
+        !Number.isFinite(
+            gapMinutes
+        )
+        || gapMinutes <= 0
+    ) {
+        return;
+    }
+
+    const horizons = [
+        {
+            id: "g30",
+            minutes: 30
+        },
+        {
+            id: "g60",
+            minutes: 60
+        },
+        {
+            id: "g90",
+            minutes: 90
+        },
+        {
+            id: "g120",
+            minutes: 120
+        },
+        {
+            id: "g180",
+            minutes: 180
+        }
+    ];
+
+    const blocked = (
+        horizons.filter(
+            item => (
+                item.minutes
+                >= gapMinutes
+            )
+        )
+    );
+
+    if (
+        blocked.length
+        === 0
+    ) {
+        return;
+    }
+
+    for (
+        const item
+        of blocked
+    ) {
+        const input = byId(
+            item.id
+        );
+
+        input.value = "";
+        input.disabled = true;
+    }
+
+    const warning = byId(
+        "overlapWarning"
+    );
+
+    const nextDate = new Date(
+        nextSession.decision_at
+    );
+
+    const blockedLabels = (
+        blocked
+        .map(
+            item => (
+                "+"
+                + item.minutes
+                + " min"
+            )
+        )
+        .join(
+            ", "
+        )
+    );
+
+    warning.textContent = (
+        "Pozor: další situace začala přibližně "
+        + Math.round(
+            gapMinutes
+        )
+        + " minut po této situaci"
+        + " ("
+        + nextDate.toLocaleTimeString(
+            "cs-CZ",
+            {
+                hour: "2-digit",
+                minute: "2-digit"
+            }
+        )
+        + "). "
+        + "Aby se průběhy nemíchaly, "
+        + "horizonty "
+        + blockedLabels
+        + " jsou vypnuté."
+    );
+
+    warning.classList.remove(
+        "hidden"
+    );
+}
+
+
+function outcomeValue(
+    id
+) {
+    const input = byId(
+        id
+    );
+
+    if (
+        input.disabled
+    ) {
+        return null;
+    }
+
+    return numberOrNull(
+        input.value
+    );
+}
+
+
 async function loadSession() {
     clearMessage();
-    const sessionId = localStorage.getItem(storageKey);
-    let localLoadError = null;
+
+    let loadError = null;
+
+    try {
+        await loadActiveSessions();
+    } catch (error) {
+        loadError = error;
+
+        activeSessions = [];
+
+        renderActiveSessions(
+            []
+        );
+    }
+
+    const sessionId = (
+        localStorage.getItem(
+            storageKey
+        )
+    );
 
     if (sessionId) {
         try {
-            const session = await requestJson("/decision-sessions/" + sessionId);
+            const session = (
+                await requestJson(
+                    "/decision-sessions/"
+                    + sessionId
+                )
+            );
 
-            if (session.status === "CANCELLED") {
-                localStorage.removeItem(storageKey);
-            } else if (isFreshActiveSession(session)) {
-                renderSession(session);
+            if (
+                session.status
+                === "CANCELLED"
+            ) {
+                localStorage.removeItem(
+                    storageKey
+                );
+            } else if (
+                isFreshActiveSession(
+                    session
+                )
+            ) {
+                renderSession(
+                    session
+                );
+
                 return;
             }
         } catch (error) {
-            localLoadError = error;
+            loadError = error;
         }
     }
 
-    try {
-        const activeSession = await requestJson(
-            "/decision-sessions/active/" + currentUserId()
+    if (
+        sessionStorage.getItem(
+            newSessionModeKey
+        )
+        === "1"
+    ) {
+        localStorage.removeItem(
+            storageKey
         );
 
-        if (activeSession) {
-            localStorage.setItem(storageKey, activeSession.id);
-            showMessage(
-                "Rozpracovaná situace byla automaticky obnovena.",
-                "success"
-            );
-            renderSession(activeSession);
-            return;
-        }
-
-        if (sessionId) {
-            localStorage.removeItem(storageKey);
-        }
-
         showNoSession();
-    } catch (error) {
-        const detail = localLoadError
-            ? localLoadError.message + " / " + error.message
-            : error.message;
 
-        showNoSession();
-        showMessage("Situaci se nepodařilo načíst: " + detail);
+        renderActiveSessions(
+            activeSessions
+        );
+
+        return;
+    }
+
+    if (
+        activeSessions.length
+        > 0
+    ) {
+        const session = (
+            activeSessions[
+                0
+            ]
+        );
+
+        localStorage.setItem(
+            storageKey,
+            session.id
+        );
+
+        renderActiveSessions(
+            activeSessions
+        );
+
+        renderSession(
+            session
+        );
+
+        return;
+    }
+
+    localStorage.removeItem(
+        storageKey
+    );
+
+    showNoSession();
+
+    renderActiveSessions(
+        activeSessions
+    );
+
+    if (
+        loadError
+    ) {
+        showMessage(
+            "Situace se nepodařilo načíst: "
+            + loadError.message
+        );
     }
 }
 
@@ -978,7 +1799,16 @@ async function createSession() {
             body: JSON.stringify(payload)
         });
 
-        localStorage.setItem(storageKey, session.id);
+        localStorage.setItem(
+            storageKey,
+            session.id
+        );
+
+        sessionStorage.removeItem(
+            newSessionModeKey
+        );
+
+        await loadActiveSessions();
         showMessage("Situace byla uložena. Shadow výsledek je skrytý.", "success");
         renderSession(session);
     } catch (error) {
@@ -1064,11 +1894,11 @@ async function saveOutcome() {
         if (baseline === null) throw new Error("Vyplň výchozí glykémii.");
 
         const values = {
-            glucose_30m: numberOrNull(byId("g30").value),
-            glucose_60m: numberOrNull(byId("g60").value),
-            glucose_90m: numberOrNull(byId("g90").value),
-            glucose_120m: numberOrNull(byId("g120").value),
-            glucose_180m: numberOrNull(byId("g180").value)
+            glucose_30m: outcomeValue("g30"),
+            glucose_60m: outcomeValue("g60"),
+            glucose_90m: outcomeValue("g90"),
+            glucose_120m: outcomeValue("g120"),
+            glucose_180m: outcomeValue("g180")
         };
 
         if (Object.values(values).every(value => value === null)) {
@@ -1088,7 +1918,11 @@ async function saveOutcome() {
         });
 
         showMessage("Situace je dokončena. Shadow byl odhalen.", "success");
-        renderSession(session);
+        await loadActiveSessions();
+
+        renderSession(
+            session
+        );
     } catch (error) {
         showMessage(error.message);
     } finally {
@@ -1117,70 +1951,222 @@ function clearForms() {
     updatePlanFields();
 }
 
-function clearLocalSession() {
-    localStorage.removeItem(storageKey);
+async function startAnotherSession() {
+    localStorage.removeItem(
+        storageKey
+    );
+
+    sessionStorage.setItem(
+        newSessionModeKey,
+        "1"
+    );
+
     clearMessage();
     clearForms();
     showNoSession();
+
+    try {
+        await loadActiveSessions();
+    } catch (error) {
+        showMessage(
+            "Seznam rozpracovaných situací "
+            + "se nepodařilo načíst: "
+            + error.message
+        );
+
+        return;
+    }
+
+    showMessage(
+        "Můžeš založit další situaci. "
+        + "Předchozí zůstaly zachované.",
+        "success"
+    );
 }
 
+
+async function finishCurrentView() {
+    localStorage.removeItem(
+        storageKey
+    );
+
+    sessionStorage.removeItem(
+        newSessionModeKey
+    );
+
+    clearForms();
+
+    await loadSession();
+}
+
+
 async function cancelCurrentSession() {
-    const sessionId = localStorage.getItem(storageKey);
+    const sessionId = (
+        localStorage.getItem(
+            storageKey
+        )
+    );
 
     if (!sessionId) {
-        clearLocalSession();
+        await startAnotherSession();
         return;
     }
 
     const confirmed = confirm(
-        "Opravdu chceš tuto rozpracovanou situaci zrušit a začít novou?"
+        "Opravdu chceš zrušit "
+        + "vybranou situaci?"
     );
 
-    if (!confirmed) return;
+    if (!confirmed) {
+        return;
+    }
 
-    const button = byId("newSessionButton");
-    setBusy(button, true);
+    const button = byId(
+        "newSessionButton"
+    );
+
+    setBusy(
+        button,
+        true
+    );
+
     clearMessage();
 
     try {
         await requestJson(
-            "/decision-sessions/" + sessionId + "/cancel",
+            "/decision-sessions/"
+            + sessionId
+            + "/cancel",
             {
                 method: "POST"
             }
         );
 
-        clearLocalSession();
+        localStorage.removeItem(
+            storageKey
+        );
+
+        sessionStorage.removeItem(
+            newSessionModeKey
+        );
+
+        clearForms();
+
+        await loadSession();
+
         showMessage(
-            "Rozpracovaná situace byla zrušena. Můžeš začít novou.",
+            "Vybraná situace byla zrušena.",
             "success"
         );
     } catch (error) {
         showMessage(
-            "Situaci se nepodařilo zrušit: " + error.message
+            "Situaci se nepodařilo zrušit: "
+            + error.message
         );
     } finally {
-        setBusy(button, false);
+        setBusy(
+            button,
+            false
+        );
     }
 }
 
-byId("createSessionButton").addEventListener("click", createSession);
-byId("savePlanButton").addEventListener("click", savePlan);
-byId("saveOutcomeButton").addEventListener("click", saveOutcome);
-byId("strategy").addEventListener("change", updatePlanFields);
-byId("mealPlanned").addEventListener("change", updateMealFields);
-byId("refreshButton").addEventListener("click", loadSession);
-byId("addRapidDoseButton").addEventListener("click", () => addRapidDoseRow());
-byId("useDexcomButton").addEventListener("click", useDexcomData);
-byId("reloadDexcomButton").addEventListener("click", loadDexcomContext);
-byId("connectDexcomButton").addEventListener("click", () => {
-    window.location.href = "/dexcom/connect/" + currentUserId();
-});
-byId("newSessionButton").addEventListener(
+
+byId(
+    "createSessionButton"
+).addEventListener(
+    "click",
+    createSession
+);
+
+byId(
+    "savePlanButton"
+).addEventListener(
+    "click",
+    savePlan
+);
+
+byId(
+    "saveOutcomeButton"
+).addEventListener(
+    "click",
+    saveOutcome
+);
+
+byId(
+    "strategy"
+).addEventListener(
+    "change",
+    updatePlanFields
+);
+
+byId(
+    "mealPlanned"
+).addEventListener(
+    "change",
+    updateMealFields
+);
+
+byId(
+    "refreshButton"
+).addEventListener(
+    "click",
+    loadSession
+);
+
+byId(
+    "addRapidDoseButton"
+).addEventListener(
+    "click",
+    () => addRapidDoseRow()
+);
+
+byId(
+    "useDexcomButton"
+).addEventListener(
+    "click",
+    useDexcomData
+);
+
+byId(
+    "reloadDexcomButton"
+).addEventListener(
+    "click",
+    loadDexcomContext
+);
+
+byId(
+    "connectDexcomButton"
+).addEventListener(
+    "click",
+    () => {
+        window.location.href = (
+            "/dexcom/connect/"
+            + currentUserId()
+        );
+    }
+);
+
+byId(
+    "startAnotherSessionButton"
+).addEventListener(
+    "click",
+    startAnotherSession
+);
+
+byId(
+    "newSessionButton"
+).addEventListener(
     "click",
     cancelCurrentSession
 );
-byId("finishButton").addEventListener("click", clearLocalSession);
+
+byId(
+    "finishButton"
+).addEventListener(
+    "click",
+    finishCurrentView
+);
 
 byId("decisionAt").value = localDateTimeValue();
 updateMealFields();
