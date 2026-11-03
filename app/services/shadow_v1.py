@@ -7,7 +7,7 @@ from app.models.action_plan import ActionPlan
 from app.models.decision_session import (
     DecisionSession,
 )
-from app.services.meal_shadow_engine_v2 import (
+from app.services.meal_shadow_engine_v25 import (
     estimate_meal_linked_shadow_action,
 )
 from app.services.predose_shadow_engine import (
@@ -16,8 +16,8 @@ from app.services.predose_shadow_engine import (
 
 
 NO_MEAL_MODEL_VERSION = "SHADOW_V1_1"
-MEAL_MODEL_VERSION = "SHADOW_V2_MEAL_4"
-ROUTER_VERSION = "SHADOW_V2_FULL_CONTEXT_4"
+MEAL_MODEL_VERSION = "SHADOW_V2_5_MEAL_1"
+ROUTER_VERSION = "SHADOW_V2_5_FULL_CONTEXT_1"
 
 MODEL_VERSION = NO_MEAL_MODEL_VERSION
 

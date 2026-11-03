@@ -1,4 +1,4 @@
-from datetime import (
+﻿from datetime import (
     datetime,
     timedelta,
     timezone,
@@ -112,7 +112,7 @@ def test_v2_routes_meal_context_to_meal_estimator():
         result[
             "model_version"
         ]
-        == MODEL_VERSION
+        == "SHADOW_V2_5_MEAL_1"
     )
 
     assert (
