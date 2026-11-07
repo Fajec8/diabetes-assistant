@@ -392,7 +392,7 @@
 
         <div id="mealFields" class="hidden">
             <div class="info">
-                Plánované jídlo vyhodnocuje meal model <strong>SHADOW_V2_MEAL_4</strong>. Shadow výsledek se spočítá při uložení situace, ale zůstane skrytý, dokud nedoplníš svůj plán a následný výsledek situace.
+                Plánované jídlo vyhodnocuje meal model <strong>SHADOW_V2_5_MEAL_1</strong>. Shadow výsledek se spočítá při uložení situace, ale zůstane skrytý, dokud nedoplníš svůj plán a následný výsledek situace.
             </div>
             <div class="grid">
                 <div>
@@ -418,7 +418,8 @@
         <hr class="separator">
 
         <h3>Poslední Tresiba</h3>
-        <p class="muted">Poslední bazální dávka před touto situací.</p>
+        <p class="muted">Poslední bazální dávka před touto situací. Ve stejný den se při další situaci údaje předvyplní se skutečným časem podání.</p>
+        <p id="tresibaCarryoverInfo" class="mini hidden" aria-live="polite"></p>
         <div class="grid">
             <div>
                 <label for="tresibaUnits">Dávka Tresiby</label>
@@ -429,11 +430,13 @@
                 <input id="tresibaAt" type="datetime-local">
             </div>
         </div>
+        <button id="clearTresibaButton" class="secondary" type="button">Vymazat Tresibu z formuláře</button>
 
         <hr class="separator">
 
         <h3>Nedávná fyzická aktivita</h3>
-        <p class="muted">Volitelné. Například posilovna, běh, fotbal nebo delší chůze.</p>
+        <p class="muted">Volitelné. Například posilovna, běh, fotbal nebo delší chůze. Poslední uložená aktivita se předvyplní v další situaci stejného dne.</p>
+        <p id="activityCarryoverInfo" class="mini hidden" aria-live="polite"></p>
         <div class="grid">
             <div>
                 <label for="activityType">Typ aktivity</label>
@@ -457,6 +460,7 @@
                 <input id="activityEnd" type="datetime-local">
             </div>
         </div>
+        <button id="clearActivityButton" class="secondary" type="button">Vymazat aktivitu z formuláře</button>
 
         <div style="margin-top:14px;">
             <label for="situationNote">Poznámka k situaci</label>
@@ -563,6 +567,10 @@ let activeSessions = [];
 
 let dexcomContext = null;
 
+// Browser-local form defaults. Never used as a new event timestamp.
+let lastLoadedContextDay = null;
+let autoFilledContext = { tresiba: null, activity: null };
+
 const byId = id => document.getElementById(id);
 
 function isCloud() {
@@ -571,6 +579,195 @@ function isCloud() {
 
 function currentUserId() {
     return isCloud() ? CLOUD_USER_ID : LOCAL_USER_ID;
+}
+
+const SAME_DAY_FIELDS = {
+    tresiba: ["tresibaUnits", "tresibaAt"],
+    activity: ["activityType", "activityIntensity", "activityStart", "activityEnd"]
+};
+
+function sameDayStorageKey() {
+    return "diabetesShadowSameDayContextV1:" + currentUserId();
+}
+
+function situationDay() {
+    return byId("decisionAt").value.slice(0, 10);
+}
+
+function contextFields(group) {
+    const values = {};
+    for (const id of SAME_DAY_FIELDS[group]) {
+        values[id] = byId(id).value;
+    }
+    return values;
+}
+
+function contextFieldsMatch(group, previous) {
+    return SAME_DAY_FIELDS[group].every(
+        id => byId(id).value === previous[id]
+    );
+}
+
+function contextFieldsAreEmpty(group) {
+    return SAME_DAY_FIELDS[group].every(
+        id => byId(id).value === ""
+    );
+}
+
+function clearContextFields(group) {
+    for (const id of SAME_DAY_FIELDS[group]) {
+        byId(id).value = "";
+    }
+}
+
+function updateContextNotice(id, message) {
+    const element = byId(id);
+    element.textContent = message;
+    element.classList.toggle("hidden", !message);
+}
+
+function showSameDayContextNotices(manuallyEdited = false) {
+    const message = "Předvyplněno z poslední uložené situace dne "
+        + situationDay()
+        + ". Zkontroluj původní čas a dávku/aktivitu; údaje lze upravit nebo vymazat.";
+
+    const warning = manuallyEdited
+        ? "Datum situace se změnilo. Ručně upravené údaje zůstaly zachované; zkontroluj jejich čas."
+        : "";
+
+    updateContextNotice(
+        "tresibaCarryoverInfo",
+        autoFilledContext.tresiba ? message : warning
+    );
+    updateContextNotice(
+        "activityCarryoverInfo",
+        autoFilledContext.activity ? message : warning
+    );
+}
+
+function readSameDayContext() {
+    try {
+        const raw = localStorage.getItem(sameDayStorageKey());
+        if (!raw) return null;
+        const saved = JSON.parse(raw);
+        return saved && saved.day === situationDay() ? saved : null;
+    } catch {
+        return null;
+    }
+}
+
+function eventIsNotAfterDecision(value) {
+    const eventTime = new Date(value).getTime();
+    const decisionTime = new Date(byId("decisionAt").value).getTime();
+    return Number.isFinite(eventTime)
+        && Number.isFinite(decisionTime)
+        && eventTime <= decisionTime;
+}
+
+function prefillSameDayContext(manuallyEdited = false) {
+    const saved = readSameDayContext();
+
+    if (saved?.tresiba && contextFieldsAreEmpty("tresiba")) {
+        const basal = saved.tresiba;
+        const units = Number(basal.units);
+        if (
+            String(basal.units ?? "").trim() !== ""
+            && Number.isFinite(units)
+            && units >= 0
+            && basal.at
+            && eventIsNotAfterDecision(basal.at)
+        ) {
+            byId("tresibaUnits").value = String(units);
+            byId("tresibaAt").value = basal.at;
+            autoFilledContext.tresiba = contextFields("tresiba");
+        }
+    }
+
+    if (saved?.activity && contextFieldsAreEmpty("activity")) {
+        const activity = saved.activity;
+        const startTime = new Date(activity.start).getTime();
+        const endTime = new Date(activity.end).getTime();
+        if (
+            typeof activity.type === "string"
+            && activity.type.trim()
+            && ["LOW", "MEDIUM", "HIGH"].includes(activity.intensity)
+            && Number.isFinite(startTime)
+            && Number.isFinite(endTime)
+            && endTime > startTime
+            && eventIsNotAfterDecision(activity.end)
+        ) {
+            byId("activityType").value = activity.type;
+            byId("activityIntensity").value = activity.intensity;
+            byId("activityStart").value = activity.start;
+            byId("activityEnd").value = activity.end;
+            autoFilledContext.activity = contextFields("activity");
+        }
+    }
+
+    showSameDayContextNotices(manuallyEdited);
+}
+
+function restoreSameDayContext() {
+    lastLoadedContextDay = situationDay();
+    autoFilledContext = { tresiba: null, activity: null };
+    prefillSameDayContext();
+}
+
+function handleSituationDayChange() {
+    const day = situationDay();
+    if (day === lastLoadedContextDay) return;
+
+    let manuallyEdited = false;
+    for (const group of ["tresiba", "activity"]) {
+        const previous = autoFilledContext[group];
+        if (!previous) continue;
+
+        if (contextFieldsMatch(group, previous)) {
+            // A change of day removes only untouched automatically filled values.
+            clearContextFields(group);
+        } else {
+            manuallyEdited = true;
+        }
+    }
+
+    autoFilledContext = { tresiba: null, activity: null };
+    lastLoadedContextDay = day;
+    prefillSameDayContext(manuallyEdited);
+}
+
+function saveSameDayContext() {
+    const day = situationDay();
+    if (!day) return false;
+
+    const basalUnits = byId("tresibaUnits").value.trim();
+    const basalAt = byId("tresibaAt").value;
+    const activityType = byId("activityType").value.trim();
+    const activityIntensity = byId("activityIntensity").value;
+    const activityStart = byId("activityStart").value;
+    const activityEnd = byId("activityEnd").value;
+
+    const saved = {
+        day,
+        tresiba: basalUnits !== "" && basalAt
+            ? { units: basalUnits, at: basalAt }
+            : null,
+        activity: activityType && activityIntensity && activityStart && activityEnd
+            ? {
+                type: activityType,
+                intensity: activityIntensity,
+                start: activityStart,
+                end: activityEnd
+            }
+            : null
+    };
+
+    try {
+        localStorage.setItem(sameDayStorageKey(), JSON.stringify(saved));
+        return true;
+    } catch {
+        // Saving the session is independent of this optional local UI feature.
+        return false;
+    }
 }
 
 function localDateTimeValue(date = new Date()) {
@@ -739,6 +936,7 @@ function useDexcomData() {
 
     if (dexcomContext.latest_system_time) {
         byId("decisionAt").value = localDateTimeValue(new Date(dexcomContext.latest_system_time));
+        handleSituationDayChange();
     }
 
     showMessage("Dexcom hodnoty byly vloženy do formuláře.", "success");
@@ -1799,6 +1997,8 @@ async function createSession() {
             body: JSON.stringify(payload)
         });
 
+        const contextStored = saveSameDayContext();
+
         localStorage.setItem(
             storageKey,
             session.id
@@ -1809,7 +2009,12 @@ async function createSession() {
         );
 
         await loadActiveSessions();
-        showMessage("Situace byla uložena. Shadow výsledek je skrytý.", "success");
+        showMessage(
+            contextStored
+                ? "Situace byla uložena. Shadow výsledek je skrytý. Údaje Tresiby a aktivity se pro tento den zapamatovaly v tomto prohlížeči."
+                : "Situace byla uložena. Shadow výsledek je skrytý. Údaje se ale nepodařilo zapamatovat pro další situaci.",
+            "success"
+        );
         renderSession(session);
     } catch (error) {
         showMessage(error.message);
@@ -1949,6 +2154,7 @@ function clearForms() {
 
     updateMealFields();
     updatePlanFields();
+    restoreSameDayContext();
 }
 
 async function startAnotherSession() {
@@ -2072,6 +2278,20 @@ async function cancelCurrentSession() {
 }
 
 
+byId("decisionAt").addEventListener("change", handleSituationDayChange);
+
+byId("clearTresibaButton").addEventListener("click", () => {
+    clearContextFields("tresiba");
+    autoFilledContext.tresiba = null;
+    showSameDayContextNotices();
+});
+
+byId("clearActivityButton").addEventListener("click", () => {
+    clearContextFields("activity");
+    autoFilledContext.activity = null;
+    showSameDayContextNotices();
+});
+
 byId(
     "createSessionButton"
 ).addEventListener(
@@ -2169,6 +2389,7 @@ byId(
 );
 
 byId("decisionAt").value = localDateTimeValue();
+restoreSameDayContext();
 updateMealFields();
 updatePlanFields();
 loadSession();
