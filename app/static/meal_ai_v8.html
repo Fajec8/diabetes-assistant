@@ -62,14 +62,16 @@ article{border:1px solid #d5e2ea;border-radius:12px;background:#fcfdfe;padding:1
   <p class="muted">Na iPhonu zvol „Vyfotit EAN“, případně použij tlačítko „Skenovat kamerou“ — při nepodporovaném živém skenování se otevře fotoaparát. Kód z fotografie se přečte na našem serveru bez OpenAI. Kód lze stále opsat ručně.</p>
  </div>
  <div id="modeManual" hidden>
-  <h2>Ručně zapsat jídlo</h2>
-  <p class="muted">Původní možnost zůstává. Pokud už sacharidy znáš, nemusíš vážit ani používat AI.</p>
+  <h2>Přidat ruční položku do společného jídla</h2>
+  <p class="muted">Tato položka se přičte k ostatním (EAN a fotografie). Přidej ji tlačítkem níže.</p>
   <div class="grid"><div><label for="manualName">Co budeš jíst?</label><input id="manualName" placeholder="Např. rýže s kuřetem"></div><div><label for="manualCarbs">Sacharidy celkem (g)</label><input id="manualCarbs" type="number" inputmode="decimal" min="0" max="1000" step="0.1" placeholder="Např. 60"></div></div>
+  <button type="button" id="manualAdd" class="primary" style="margin-top:12px">+ Přidat ruční položku</button>
  </div>
  <p id="status" role="status" class="muted"></p>
 </section>
 <section id="recognizedSection" hidden>
- <div class="row between"><h2>Rozpoznané potraviny a gramáž</h2><button type="button" id="addFood">+ Přidat položku</button></div>
+ <div class="row between"><h2>Položky společného jídla <span id="itemCount" class="muted"></span></h2><button type="button" id="addFood">+ Přidat položku</button></div>
+ <p class="muted">EAN, fotografie i ručně zadané položky se zde sčítají. Každou můžeš opravit nebo odebrat.</p>
  <div id="question" class="warn" hidden></div>
  <div id="foodList"></div>
 </section>
@@ -190,24 +192,28 @@ async function prepareEanImageForUpload(file) {
 }
 
 function invalidate(){ $("confirm").checked=false;updateTotal() }
-function newItem(name="",settings={}){return {name,alternatives:settings.alternatives||[],portion:settings.portion??"",confidence:settings.confidence||"",uncertainty:settings.uncertainty||"",per100:settings.per100??"",source:settings.source||"",sourceId:settings.sourceId||"",sourceUrl:settings.sourceUrl||"",sourceWarning:settings.sourceWarning||"",candidates:[],searching:false,error:"",searchVersion:0,selected:null}}
+function newItem(name="",settings={}){return {name,manual:!!settings.manual,manualCarbs:settings.manualCarbs??"",alternatives:settings.alternatives||[],portion:settings.portion??"",confidence:settings.confidence||"",uncertainty:settings.uncertainty||"",per100:settings.per100??"",source:settings.source||"",sourceId:settings.sourceId||"",sourceUrl:settings.sourceUrl||"",sourceWarning:settings.sourceWarning||"",candidates:[],searching:false,error:"",searchVersion:0,selected:null}}
+// MEAL_AI_V85_COMBINED_MEAL: one basket for EAN + photos + manual entries.
 function updateTotal(){
- let valid=true,total=0,massTotal=0;
- if(state.mode==="manual"){
-  const n=number($("manualCarbs").value,0,1000);
-  valid=n!==null&&$("manualName").value.trim().length>1;
-  if(valid)total=n;
- }else{
-  valid=state.items.length>0;
-  for(const item of state.items){
+ let valid=state.items.length>0&&state.items.length<=20,total=0,massTotal=0,hasManual=false;
+ for(const item of state.items){
+  if(item.manual){
+   hasManual=true;
+   const carbs=number(item.manualCarbs,0,1000);
+   if(item.name.trim().length<2||carbs===null)valid=false;
+   else total+=carbs;
+  }else{
    const portion=number(item.portion,0.1,3000),per=number(item.per100,0,100);
    if(!item.name.trim()||portion===null||per===null||!item.source.trim())valid=false;
    else {total+=portion*per/100;massTotal+=portion;}
   }
  }
  $("total").textContent=valid?total.toFixed(1)+" g":"—";
- $("totalNote").textContent=valid?("Odhadovaná hmotnost celého jídla: "+(state.mode==="manual"?"nezadána":massTotal.toFixed(0)+" g")+"; sacharidy "+(total/10).toFixed(2)+" VJ (1 VJ = 10 g). Zkontroluj podklady před potvrzením."):
-    "Neúplný návrh: u každé položky je potřeba správný název, porce a nutriční zdroj. Můžeš také použít ruční zadání.";
+ $("totalNote").textContent=valid?
+  ((hasManual?"Hmotnost ručně přidaných položek není zahrnuta; ":" ")+
+   "hmotnost ostatních položek: "+massTotal.toFixed(0)+" g; sacharidy celého jídla "+
+   (total/10).toFixed(2)+" VJ (1 VJ = 10 g). Zkontroluj každou položku."):
+  "Pro výpočet musí mít každá položka správný název a buď ověřené sacharidy, nebo porci a nutriční zdroj. Maximálně 20 položek.";
  $("apply").disabled=!valid||!$("confirm").checked||state.busy;
  return valid?Math.round(total*10)/10:null;
 }
@@ -215,12 +221,22 @@ function mode(name){
  stopCamera();state.mode=name;invalidate();
  for(const b of document.querySelectorAll('[data-mode]'))b.classList.toggle('active',b.dataset.mode===name);
  $("modePhoto").hidden=name!=="photo";$("modeEan").hidden=name!=="ean";$("modeManual").hidden=name!=="manual";
- $("recognizedSection").hidden=name==="manual";
- if(name!=="manual")renderFoods();
- say("");updateTotal();
+ // The combined meal stays visible regardless of the current input method.
+ $("recognizedSection").hidden=false;
+ renderFoods();say("");updateTotal();
 }
 for(const button of document.querySelectorAll('[data-mode]'))button.addEventListener('click',()=>mode(button.dataset.mode));
-$("manualName").addEventListener("input",invalidate);$("manualCarbs").addEventListener("input",invalidate);
+$("manualName").addEventListener("input",invalidate);
+$("manualCarbs").addEventListener("input",invalidate);
+$("manualAdd").addEventListener("click",()=>{
+ if(state.items.length>=20){say("Jedno jídlo může mít maximálně 20 položek.",true);return}
+ const name=$("manualName").value.trim();
+ const carbs=number($("manualCarbs").value,0,1000);
+ if(name.length<2||carbs===null){say("Zadej název a sacharidy ruční položky (0–1000 g).",true);return}
+ state.items.push(newItem(name,{manual:true,manualCarbs:String(carbs)}));
+ $("manualName").value="";$("manualCarbs").value="";
+ invalidate();renderFoods();say("Ručně přidaná položka: "+name+". Můžeš přidat další fotku nebo EAN.");
+});
 function setMealPhoto(file){
  if(state.photoUrl){URL.revokeObjectURL(state.photoUrl);state.photoUrl=null}
  state.photoFile=file||null;
@@ -228,13 +244,14 @@ function setMealPhoto(file){
  $("preview").hidden=!file;
  $("preview").removeAttribute('src');
  if(file){state.photoUrl=URL.createObjectURL(file);$("preview").src=state.photoUrl}
- state.items=[];renderFoods();invalidate();
+ renderFoods();invalidate();
  say(file?"Fotografie připravená. Zatím nebyla nikam odeslána.":"");
 }
 $("imageInput").addEventListener("change",event=>setMealPhoto(event.target.files?.[0]));
 $("mealCameraInput").addEventListener("change",event=>setMealPhoto(event.target.files?.[0]));
 $("photoAnalyze").addEventListener("click",async()=>{
  const file=state.photoFile;if(!file)return;
+ if(state.items.length>=20){say("Jedno jídlo může mít maximálně 20 položek.",true);return}
  if(file.size>10*1024*1024){say("Fotografie je větší než 10 MB.",true);return}
  if(!['image/jpeg','image/png','image/webp'].includes(file.type)){
   say("Tento formát fotografie zatím nepodporujeme. Zkus nastavit v iPhonu režim kompatibilní JPEG nebo vyber JPG/PNG.",true);return;
@@ -245,13 +262,17 @@ $("photoAnalyze").addEventListener("click",async()=>{
   const response=await apiFetch('/meal-ai/api/analyze',{method:'POST',headers:{'Content-Type':file.type||'application/octet-stream'},body:file});
   const data=await response.json();if(!response.ok)throw Error(data.detail||"Analýza selhala");
   if(!data.recognition?.contains_food||!data.recognition.items.length)throw Error('Na fotce nebylo rozpoznáno jídlo.');
-  state.items=data.recognition.items.map(x=>newItem(x.name_cs,{alternatives:x.alternatives_cs||[],portion:x.portion_g_estimate,confidence:x.portion_confidence,uncertainty:x.uncertainty}));
+  const recognized=data.recognition.items.map(x=>newItem(x.name_cs,{alternatives:x.alternatives_cs||[],portion:x.portion_g_estimate,confidence:x.portion_confidence,uncertainty:x.uncertainty}));
+  state.items.push(...recognized);
   $("question").textContent=data.recognition.question_for_user||"";$("question").hidden=!data.recognition.question_for_user;
   invalidate();renderFoods();
-  say("Rozpoznáno "+state.items.length+" položek. Odhady zkontroluj. Tokeny: "+(data.usage?.input_tokens??"—")+" vstup / "+(data.usage?.output_tokens??"—")+" výstup.");
-  for(const item of state.items)lookupFood(item);
+  say("Z fotky přidáno "+recognized.length+" položek do společného jídla. Odhady zkontroluj. Tokeny: "+(data.usage?.input_tokens??"—")+" vstup / "+(data.usage?.output_tokens??"—")+" výstup.");
+  for(const item of recognized)lookupFood(item);
+  state.photoFile=null;$("imageInput").value="";$("mealCameraInput").value="";
+  $("photoAnalyze").disabled=true;$("preview").hidden=true;
+  if(state.photoUrl){URL.revokeObjectURL(state.photoUrl);state.photoUrl=null}
  }catch(error){say("Rozpoznávání: "+error.message,true)}
- finally{state.busy=false;$("photoAnalyze").disabled=false;updateTotal()}
+ finally{state.busy=false;$("photoAnalyze").disabled=!state.photoFile;updateTotal()}
 });
 function candidateLabel(c){return (c.source==='private_book'?'📘 Tvoje tabulka':c.source==='usda'?'USDA':c.source==='open_food_facts'?'EAN Open Food Facts':'Jiný zdroj')+" — "+c.name+" ("+c.carbs_per_100g+" g/100 g)"}
 function selectCandidate(item,candidate){
@@ -279,10 +300,23 @@ async function lookupFood(item){
 function clearNutrition(item){item.per100="";item.source="";item.sourceId="";item.sourceUrl="";item.sourceWarning="";item.selected=null;item.candidates=[];item.searchVersion++;invalidate()}
 function renderFoods(){
  const holder=$("foodList");holder.replaceChildren();
+ $("itemCount").textContent="("+state.items.length+")";
  if(!state.items.length){holder.append(h('p','muted','Zatím žádné položky. Vyfotíš jídlo, načteš EAN, nebo můžeš něco přidat ručně.'));updateTotal();return}
  state.items.forEach((item,index)=>{
   const card=h('article');const title=h('div','row between');title.append(h('h3','',"Položka "+(index+1)));
   const del=h('button','',"Odebrat");del.type='button';del.onclick=()=>{state.items.splice(index,1);invalidate();renderFoods()};title.append(del);card.append(title);
+  if(item.manual){
+   const grid=h('div','grid');
+   const boxName=h('div');boxName.append(h('label','',"Název ruční položky"));
+   const name=h('input');name.value=item.name;name.maxLength=100;
+   name.oninput=()=>{item.name=name.value;invalidate()};boxName.append(name);grid.append(boxName);
+   const boxCarbs=h('div');boxCarbs.append(h('label','',"Sacharidy této položky celkem (g)"));
+   const carbs=h('input');carbs.type='number';carbs.inputMode='decimal';carbs.step='0.1';
+   carbs.min='0';carbs.max='1000';carbs.value=item.manualCarbs;
+   carbs.oninput=()=>{item.manualCarbs=carbs.value;invalidate()};boxCarbs.append(carbs);grid.append(boxCarbs);
+   card.append(grid);card.append(h('p','muted','Ručně potvrzený údaj – nevypočítává se z gramáže.'));
+   holder.append(card);return;
+  }
   if(item.uncertainty)card.append(h('p','flag',"Nejistota AI: "+item.uncertainty));
   const grid=h('div','grid');const nameBox=h('div');nameBox.append(h('label','',"Název a možná alternativa"));
   const options=[item.name,...item.alternatives].filter((a,i,arr)=>a&&arr.indexOf(a)===i);
@@ -317,8 +351,9 @@ function renderFoods(){
  });
  updateTotal();
 }
-$("addFood").onclick=()=>{state.items.push(newItem(''));invalidate();renderFoods()};
+$("addFood").onclick=()=>{if(state.items.length>=20){say("Jedno jídlo může mít maximálně 20 položek.",true);return}state.items.push(newItem(''));invalidate();renderFoods()};
 async function lookupEan(){
+ if(state.items.length>=20){say("Jedno jídlo může mít maximálně 20 položek.",true);return}
  const code=$("eanCode").value.trim();if(!/^\d{8,14}$/.test(code)){say('EAN musí mít 8–14 číslic.',true);return}
  say('Načítám výrobek z Open Food Facts…');state.busy=true;updateTotal();
  try{
@@ -380,17 +415,21 @@ $("cameraStop").onclick=stopCamera;window.addEventListener('pagehide',()=>{stopC
 $("confirm").addEventListener('change',updateTotal);
 $("apply").onclick=()=>{
  const total=updateTotal();if(total===null||!$("confirm").checked)return;
- let items=[],desc='';
- if(state.mode==='manual'){
-  desc=$("manualName").value.trim();items=[{food_name:desc,carbohydrates_g:total,note:'Ručně potvrzený údaj'}];
- }else{
-  items=state.items.map(item=>({food_name:item.name.trim(),amount_g:Number(item.portion),carbohydrates_g:Math.round(Number(item.portion)*Number(item.per100))/100,
-    note:(item.source+'; '+(item.sourceWarning||'')).slice(0,480)}));
-  desc=items.map(item=>item.food_name).join(', ').slice(0,500);
- }
+ const items=state.items.map(item=>{
+  if(item.manual)return {
+   food_name:item.name.trim(),carbohydrates_g:Math.round(Number(item.manualCarbs)*10)/10,
+   note:'Ručně potvrzený údaj'
+  };
+  return {
+   food_name:item.name.trim(),amount_g:Number(item.portion),
+   carbohydrates_g:Math.round(Number(item.portion)*Number(item.per100))/100,
+   note:(item.source+'; '+(item.sourceWarning||'')).slice(0,480)
+  };
+ });
+ const desc=items.map(item=>item.food_name).join(', ').slice(0,500);
  const message={type:'diabetes-assistant-meal-v8',confirmed:true,carbohydrates_g:total,description:desc,items};
- // No persistence or submission here. The parent applies the confirmed proposal to its form.
- if(window.parent&&window.parent!==window){window.parent.postMessage(message,window.location.origin);say('Jídlo předáno do formuláře Diabetes Assistantu.')}
+ // A single confirmed combined meal: no session save, no insulin delivery.
+ if(window.parent&&window.parent!==window){window.parent.postMessage(message,window.location.origin);say('Celé jídlo předáno do formuláře Diabetes Assistantu.')}
  else{say('Otevři tuto stránku tlačítkem z aktuální situace, aby šlo údaje předat. Aktuální součet: '+total+' g.')}
 };
 $("cancel").onclick=()=>{stopCamera();if(window.parent!==window)window.parent.postMessage({type:'diabetes-assistant-meal-v8-close'},window.location.origin);else history.back()};
