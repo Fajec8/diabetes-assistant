@@ -37,8 +37,8 @@ def _beta_enabled() -> bool:
 
 def _required_beta_token() -> str:
     token = os.getenv('MEAL_AI_BETA_TOKEN', '')
-    if len(token) < 32:
-        raise HTTPException(503, 'Meal AI beta není nakonfigurovaná. Chybí dlouhý přístupový token.')
+    if len(token) < 32 or not token.isascii():
+        raise HTTPException(503, 'Meal AI beta není nakonfigurovaná. Přístupový kód musí mít alespoň 32 ASCII znaků bez diakritiky.')
     return token
 
 
@@ -64,7 +64,9 @@ def _access(request: Request, *, private: bool = True) -> str:
     if mode == 'restricted_beta' and private:
         expected = _required_beta_token()
         auth = request.headers.get('authorization', '')
-        if not auth.startswith('Bearer ') or not secrets.compare_digest(auth[7:], expected):
+        # compare_digest(str, str) raises TypeError if either token contains non-ASCII.
+        # Reject malformed client tokens with 401 instead of crashing the endpoint.
+        if not auth.startswith('Bearer ') or not auth[7:].isascii() or not secrets.compare_digest(auth[7:], expected):
             raise HTTPException(401, 'Přístup zamítnut. Zkontroluj beta přístupový kód.', headers={'WWW-Authenticate': 'Bearer'})
     return mode
 
