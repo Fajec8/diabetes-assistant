@@ -18,6 +18,7 @@ from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import FileResponse
 
 from app.services import meal_ai_v8 as core
+from app.services.meal_barcode_camera_v82 import MAX_BARCODE_BYTES, decode_ean_photo
 
 router = APIRouter(prefix='/meal-ai', tags=['Meal AI – restricted beta'])
 PAGE = Path(__file__).resolve().parents[1] / 'static' / 'meal_ai_v8.html'
@@ -162,6 +163,31 @@ async def ean(request: Request, code: str):
     except ValueError as exc:
         raise HTTPException(422, str(exc)) from None
 
+
+
+
+@router.post('/api/scan-ean')
+async def scan_ean(request: Request):
+    """Read an EAN camera snapshot. Protected by the beta token, never persisted."""
+    _access(request)
+    length = request.headers.get('content-length')
+    if length and length.isdigit() and int(length) > MAX_BARCODE_BYTES:
+        raise HTTPException(413, 'Maximální velikost snímku EAN je 8 MB.')
+    chunks = []
+    size = 0
+    async for chunk in request.stream():
+        size += len(chunk)
+        if size > MAX_BARCODE_BYTES:
+            raise HTTPException(413, 'Maximální velikost snímku EAN je 8 MB.')
+        chunks.append(chunk)
+    if not chunks:
+        raise HTTPException(422, 'Nebyla zaslána fotografie čárového kódu.')
+    try:
+        return await run_in_threadpool(decode_ean_photo, b''.join(chunks))
+    except ValueError as exc:
+        raise HTTPException(422, str(exc)) from None
+    except RuntimeError as exc:
+        raise HTTPException(503, str(exc)) from None
 
 @router.get('/book/{page_id}', include_in_schema=False)
 def book_page(request: Request, page_id: str):

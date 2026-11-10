@@ -14,7 +14,7 @@ p{line-height:1.5}.muted{color:#566979;font-size:13px}.warn{color:#794907;backgr
 label{font-size:13px;font-weight:650;display:block;margin:10px 0 5px}input,select{width:100%;min-height:42px;padding:9px;border:1px solid #b8c9d4;border-radius:8px;font:inherit;background:white}
 input[type=checkbox]{width:18px;min-height:18px;accent-color:#087a6a}button{border:1px solid #b7cbd3;border-radius:9px;background:white;padding:10px 13px;font:inherit;color:#154156;cursor:pointer}
 button.primary{background:#087b71;color:white;border-color:#087b71;font-weight:700}button:disabled{opacity:.48;cursor:not-allowed}
-button.active{background:#deefe9;border-color:#087b71;font-weight:700}.tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin:14px 0}.tabs button{padding:11px 6px;font-size:14px}
+button.active{background:#deefe9;border-color:#087b71;font-weight:700}.capture-action{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:10px 13px;margin:4px 0;border:1px solid #b7cbd3;border-radius:9px;color:#154156;font-weight:650;cursor:pointer;text-align:center;background:#fff}.capture-action.primary{background:#087b71;border-color:#087b71;color:#fff}.capture-choice{display:flex;flex-wrap:wrap;gap:9px;margin:12px 0}.capture-choice label{font-size:15px}.camera-hint{font-size:13px;color:#526978}.visually-hidden-file{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}.tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin:14px 0}.tabs button{padding:11px 6px;font-size:14px}
 article{border:1px solid #d5e2ea;border-radius:12px;background:#fcfdfe;padding:14px;margin:12px 0}.candidate{width:100%;display:block;text-align:left;margin:7px 0;border-color:#d2e0e7}.candidate.selected{border:2px solid #087b71;background:#e9f7f3}
 .candidate small{display:block;color:#526978;margin-top:4px}.flag{font-size:12px;background:#fff0d8;padding:8px;border-radius:8px;color:#744410}
 #preview{display:block;margin:12px auto;max-height:300px;max-width:100%;border-radius:9px}#preview[hidden],*[hidden]{display:none!important}
@@ -38,7 +38,13 @@ article{border:1px solid #d5e2ea;border-radius:12px;background:#fcfdfe;padding:1
  <div id="modePhoto">
   <h2>Vyfotit nebo nahrát jídlo</h2>
   <p class="muted">AI odhadne názvy i porce a při nejistotě nabídne až 3 možnosti. Snímek odešleme k placené analýze až po kliknutí na tlačítko. Server ho neukládá.</p>
-  <input id="imageInput" type="file" accept="image/jpeg,image/png,image/webp" capture="environment" aria-label="Fotografie jídla">
+  <div class="capture-choice">
+   <label class="capture-action primary" for="mealCameraInput">📷 Vyfotit jídlo</label>
+   <label class="capture-action" for="imageInput">🖼️ Vybrat z galerie</label>
+  </div>
+  <input id="mealCameraInput" class="visually-hidden-file" type="file" accept="image/*" capture="environment" aria-label="Vyfotit jídlo zadním fotoaparátem">
+  <input id="imageInput" class="visually-hidden-file" type="file" accept="image/jpeg,image/png,image/webp" aria-label="Vybrat fotografii jídla z galerie">
+  <p class="camera-hint">Na telefonu se po klepnutí na „Vyfotit jídlo“ otevře systémový fotoaparát nebo nabídka pořízení snímku. Fotografie se odešle až po potvrzení analýzy.</p>
   <img id="preview" hidden alt="Náhled připravované fotografie">
   <button id="photoAnalyze" class="primary" disabled type="button">Rozpoznat jídlo pomocí AI</button>
  </div>
@@ -46,9 +52,14 @@ article{border:1px solid #d5e2ea;border-radius:12px;background:#fcfdfe;padding:1
   <h2>Načíst čárový kód výrobku</h2>
   <p class="muted">Naskenuj kamerou, nebo napiš EAN/UPC (8–14 číslic). Nutriční údaje získáme z Open Food Facts; ověř je proti obalu.</p>
   <div class="grid"><input id="eanCode" type="text" inputmode="numeric" maxlength="14" placeholder="Např. 859..." aria-label="EAN / UPC"><button id="eanLookup" class="primary" type="button">Najít výrobek</button></div>
-  <div class="row" style="margin-top:12px"><button id="cameraStart" type="button">📷 Skenovat kamerou</button><button id="cameraStop" type="button" hidden>Zastavit kameru</button></div>
+  <div class="row" style="margin-top:12px">
+   <button id="cameraStart" type="button">📷 Skenovat kamerou</button>
+   <label class="capture-action" for="eanCameraInput">📸 Vyfotit EAN</label>
+   <button id="cameraStop" type="button" hidden>Zastavit kameru</button>
+  </div>
+  <input id="eanCameraInput" class="visually-hidden-file" type="file" accept="image/*" capture="environment" aria-label="Vyfotit čárový kód zadním fotoaparátem">
   <video id="cameraView" muted playsinline autoplay hidden></video>
-  <p class="muted">Pokud prohlížeč skenování nepodporuje, EAN lze opsat ručně.</p>
+  <p class="muted">Na iPhonu zvol „Vyfotit EAN“, případně použij tlačítko „Skenovat kamerou“ — při nepodporovaném živém skenování se otevře fotoaparát. Kód z fotografie se přečte na našem serveru bez OpenAI. Kód lze stále opsat ručně.</p>
  </div>
  <div id="modeManual" hidden>
   <h2>Ručně zapsat jídlo</h2>
@@ -74,7 +85,7 @@ article{border:1px solid #d5e2ea;border-radius:12px;background:#fcfdfe;padding:1
 "use strict";
 const $ = id => document.getElementById(id);
 const h = (tag,cls,text) => {const el=document.createElement(tag);if(cls)el.className=cls;if(text!==undefined)el.textContent=text;return el};
-const state={mode:"photo",items:[],busy:false,photoUrl:null,scanStream:null,scanning:false};
+const state={mode:"photo",items:[],busy:false,photoUrl:null,photoFile:null,scanStream:null,scanning:false};
 // The beta access token is never part of a URL, HTML file, or API log.
 // It lasts only for this browser tab and is NOT shared with the main form.
 const betaAuth = !["localhost","127.0.0.1"].includes(window.location.hostname);
@@ -135,16 +146,24 @@ function mode(name){
 }
 for(const button of document.querySelectorAll('[data-mode]'))button.addEventListener('click',()=>mode(button.dataset.mode));
 $("manualName").addEventListener("input",invalidate);$("manualCarbs").addEventListener("input",invalidate);
-$("imageInput").addEventListener("change",()=>{
- const file=$("imageInput").files?.[0];$("photoAnalyze").disabled=!file;
- if(state.photoUrl)URL.revokeObjectURL(state.photoUrl);
- $("preview").hidden=!file;$("preview").src=file?URL.createObjectURL(file):"";
- if(file)state.photoUrl=$("preview").src;
- state.items=[];renderFoods();invalidate();say(file?"Fotografie připravená. Zatím nebyla nikam odeslána.":"");
-});
+function setMealPhoto(file){
+ if(state.photoUrl){URL.revokeObjectURL(state.photoUrl);state.photoUrl=null}
+ state.photoFile=file||null;
+ $("photoAnalyze").disabled=!file;
+ $("preview").hidden=!file;
+ $("preview").removeAttribute('src');
+ if(file){state.photoUrl=URL.createObjectURL(file);$("preview").src=state.photoUrl}
+ state.items=[];renderFoods();invalidate();
+ say(file?"Fotografie připravená. Zatím nebyla nikam odeslána.":"");
+}
+$("imageInput").addEventListener("change",event=>setMealPhoto(event.target.files?.[0]));
+$("mealCameraInput").addEventListener("change",event=>setMealPhoto(event.target.files?.[0]));
 $("photoAnalyze").addEventListener("click",async()=>{
- const file=$("imageInput").files?.[0];if(!file)return;
+ const file=state.photoFile;if(!file)return;
  if(file.size>10*1024*1024){say("Fotografie je větší než 10 MB.",true);return}
+ if(!['image/jpeg','image/png','image/webp'].includes(file.type)){
+  say("Tento formát fotografie zatím nepodporujeme. Zkus nastavit v iPhonu režim kompatibilní JPEG nebo vyber JPG/PNG.",true);return;
+ }
  if(!window.confirm("Odeslat fotografii do placeného OpenAI API k rozpoznání jídla?"))return;
  state.busy=true;updateTotal();$("photoAnalyze").disabled=true;say("AI rozpoznává potraviny a odhaduje porce…");
  try{
@@ -224,7 +243,7 @@ function renderFoods(){
  updateTotal();
 }
 $("addFood").onclick=()=>{state.items.push(newItem(''));invalidate();renderFoods()};
-$("eanLookup").onclick=async()=>{
+async function lookupEan(){
  const code=$("eanCode").value.trim();if(!/^\d{8,14}$/.test(code)){say('EAN musí mít 8–14 číslic.',true);return}
  say('Načítám výrobek z Open Food Facts…');state.busy=true;updateTotal();
  try{
@@ -233,7 +252,23 @@ $("eanLookup").onclick=async()=>{
   state.items.push(newItem(data.name,{per100:data.carbs_per_100g,source:data.source_detail,sourceId:data.source_id,sourceUrl:data.source_url,sourceWarning:data.warning}));
   mode('ean');renderFoods();say('Nalezeno: '+data.name+'. Ještě doplň množství porce a ověř údaj podle obalu.');
  }catch(error){say(error.message,true)}finally{state.busy=false;updateTotal()}
-};
+}
+$("eanLookup").onclick=lookupEan;
+$("eanCameraInput").addEventListener('change',async event=>{
+ const file=event.target.files?.[0];
+ if(!file)return;
+ try{
+  if(file.size>8*1024*1024)throw Error('Snímek EAN je příliš velký (max. 8 MB).');
+  say('Čtu čárový kód z fotografie…');
+  const response=await apiFetch('/meal-ai/api/scan-ean',{method:'POST',headers:{'Content-Type':file.type||'application/octet-stream'},body:file});
+  const data=await response.json();
+  if(!response.ok)throw Error(data.detail||'Čárový kód se nepodařilo přečíst.');
+  $('eanCode').value=data.code;
+  say('EAN rozpoznán: '+data.code+'. Vyhledávám výrobek…');
+  await lookupEan();
+ }catch(error){say('Skenování EAN: '+error.message,true)}
+ finally{event.target.value=''}
+});
 let detector=null;
 function stopCamera(){state.scanning=false;const stream=state.scanStream;if(stream){for(const track of stream.getTracks())track.stop()}state.scanStream=null;$("cameraView").hidden=true;$("cameraStop").hidden=true;$("cameraStart").hidden=false}
 async function cameraTick(){
@@ -246,7 +281,7 @@ async function cameraTick(){
  if(state.scanning)requestAnimationFrame(cameraTick);
 }
 $("cameraStart").onclick=async()=>{
- if(!('BarcodeDetector' in window)||!navigator.mediaDevices?.getUserMedia){say('Tento prohlížeč nepodporuje automatické čtení EAN. Opiš kód ručně.',true);return}
+ if(!('BarcodeDetector' in window)||!navigator.mediaDevices?.getUserMedia){$('eanCameraInput').click();return}
  try{
   detector=new BarcodeDetector({formats:['ean_13','ean_8','upc_a','upc_e','itf']});
   state.scanStream=await navigator.mediaDevices.getUserMedia({audio:false,video:{facingMode:'environment'}});
@@ -255,7 +290,7 @@ $("cameraStart").onclick=async()=>{
   cameraTick();
  }catch(e){stopCamera();say('Kameru se nepodařilo otevřít: '+e.message,true)}
 };
-$("cameraStop").onclick=stopCamera;window.addEventListener('pagehide',stopCamera);
+$("cameraStop").onclick=stopCamera;window.addEventListener('pagehide',()=>{stopCamera();if(state.photoUrl)URL.revokeObjectURL(state.photoUrl)});
 $("confirm").addEventListener('change',updateTotal);
 $("apply").onclick=()=>{
  const total=updateTotal();if(total===null||!$("confirm").checked)return;
