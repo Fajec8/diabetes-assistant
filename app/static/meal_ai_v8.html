@@ -99,12 +99,18 @@ function getBetaToken(){
   if(token)sessionStorage.setItem(betaSessionKey,token);
  }
  if(!token)throw Error("Pro tuto betu je nutný přístupový kód.");
+ if(!/^[A-Za-z0-9+\/_=-]{32,256}$/.test(token)){
+  sessionStorage.removeItem(betaSessionKey);
+  throw Error("Beta přístupový kód obsahuje neplatné znaky. Vlož znovu přesnou hodnotu MEAL_AI_BETA_TOKEN z Renderu.");
+ }
  return token;
 }
 async function apiFetch(url,options={}){
  const headers=new Headers(options.headers||{});
  if(betaAuth)headers.set("Authorization","Bearer "+getBetaToken());
- const response=await fetch(url,{...options,headers,cache:"no-store"});
+ let response;
+ try { response=await fetch(url,{...options,headers,cache:"no-store"}); }
+ catch(error) { throw Error("Požadavek se nepodařilo odeslat ("+url+"): "+error.message); }
  if(response.status===401){
   sessionStorage.removeItem(betaSessionKey);
   throw Error("Nesprávný přístupový kód. Při dalším pokusu ho zadej znovu.");
@@ -114,6 +120,75 @@ async function apiFetch(url,options={}){
 
 function number(value,min,max){if(value===null||value===undefined||String(value).trim()==="")return null;const n=Number(value);return Number.isFinite(n)&&n>=min&&n<=max?n:null}
 function say(message,error=false){$("status").textContent=message;$("status").style.color=error?"#ae292e":"#536879"}
+
+// MEAL_AI_V83_EAN_IPHONE_DIAGNOSTICS
+async function readMealApiResponse(response, context) {
+  let body = "";
+  try {
+    body = await response.text();
+  } catch (error) {
+    throw Error(context + ": odpověď serveru nelze přečíst (HTTP " +
+      response.status + "). Zkontroluj Render Logs.");
+  }
+  let parsed = null;
+  try {
+    parsed = JSON.parse(body);
+  } catch (error) {
+    const kind = (response.headers.get("content-type") || "neznámý typ");
+    throw Error(context + ": server vrátil HTTP " + response.status +
+      " místo platné JSON odpovědi (" + kind +
+      "). Otevři Render → Logs a vyhledej POST /meal-ai/api/scan-ean.");
+  }
+  if (!response.ok) {
+    const detail = parsed && parsed.detail;
+    const message = typeof detail === "string" ? detail :
+      "Podrobnosti zjistíš v Render → Logs.";
+    throw Error(context + ": HTTP " + response.status + " – " + message);
+  }
+  return parsed;
+}
+
+// The iPhone may produce an HEIC image or a photo too large for the 8 MB API.
+// First try a standard JPEG/PNG/WebP unchanged; otherwise convert locally
+// to a resized JPEG (and drop EXIF metadata) without any paid API call.
+async function prepareEanImageForUpload(file) {
+  const limit = 8 * 1024 * 1024;
+  const accepted = ["image/jpeg", "image/png", "image/webp"];
+  const mime = (file.type || "").toLowerCase();
+  if (accepted.includes(mime) && file.size <= limit) return file;
+
+  let url = null, image;
+  try {
+    url = URL.createObjectURL(file);
+    image = new Image();
+    await new Promise((resolve, reject) => {
+      image.onload = resolve;
+      image.onerror = () => reject(Error("Prohlížeč nedokáže načíst formát fotografie."));
+      image.src = url;
+    });
+    const w = image.naturalWidth, h = image.naturalHeight;
+    if (!w || !h) throw Error("Fotografie nemá platné rozměry.");
+    const scale = Math.min(1, 2400 / Math.max(w, h));
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.max(1, Math.round(w * scale));
+    canvas.height = Math.max(1, Math.round(h * scale));
+    const ctx = canvas.getContext("2d");
+    if (!ctx) throw Error("Nelze inicializovat zpracování fotografie.");
+    ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+    const jpg = await new Promise(resolve => canvas.toBlob(resolve, "image/jpeg", 0.90));
+    if (!jpg || jpg.type !== "image/jpeg")
+      throw Error("Nepodařilo se převést fotografii na JPEG.");
+    if (jpg.size > limit)
+      throw Error("I po zmenšení má fotografie více než 8 MB.");
+    return jpg;
+  } catch (error) {
+    throw Error("Fotografii nelze připravit pro čtení EAN (" + (mime || "neznámý formát") +
+      "). Zkus pořídit snímek jako JPEG, případně EAN opiš. " + error.message);
+  } finally {
+    if (url) URL.revokeObjectURL(url);
+  }
+}
+
 function invalidate(){ $("confirm").checked=false;updateTotal() }
 function newItem(name="",settings={}){return {name,alternatives:settings.alternatives||[],portion:settings.portion??"",confidence:settings.confidence||"",uncertainty:settings.uncertainty||"",per100:settings.per100??"",source:settings.source||"",sourceId:settings.sourceId||"",sourceUrl:settings.sourceUrl||"",sourceWarning:settings.sourceWarning||"",candidates:[],searching:false,error:"",searchVersion:0,selected:null}}
 function updateTotal(){
@@ -247,8 +322,8 @@ async function lookupEan(){
  const code=$("eanCode").value.trim();if(!/^\d{8,14}$/.test(code)){say('EAN musí mít 8–14 číslic.',true);return}
  say('Načítám výrobek z Open Food Facts…');state.busy=true;updateTotal();
  try{
-  const response=await apiFetch('/meal-ai/api/ean/'+encodeURIComponent(code));const data=await response.json();
-  if(!response.ok)throw Error(data.detail||'EAN nebyl nalezen');
+  const response=await apiFetch('/meal-ai/api/ean/'+encodeURIComponent(code));
+  const data=await readMealApiResponse(response,'Vyhledání výrobku');
   state.items.push(newItem(data.name,{per100:data.carbs_per_100g,source:data.source_detail,sourceId:data.source_id,sourceUrl:data.source_url,sourceWarning:data.warning}));
   mode('ean');renderFoods();say('Nalezeno: '+data.name+'. Ještě doplň množství porce a ověř údaj podle obalu.');
  }catch(error){say(error.message,true)}finally{state.busy=false;updateTotal()}
@@ -257,17 +332,28 @@ $("eanLookup").onclick=lookupEan;
 $("eanCameraInput").addEventListener('change',async event=>{
  const file=event.target.files?.[0];
  if(!file)return;
+ let phase="příprava fotografie";
  try{
-  if(file.size>8*1024*1024)throw Error('Snímek EAN je příliš velký (max. 8 MB).');
-  say('Čtu čárový kód z fotografie…');
-  const response=await apiFetch('/meal-ai/api/scan-ean',{method:'POST',headers:{'Content-Type':file.type||'application/octet-stream'},body:file});
-  const data=await response.json();
-  if(!response.ok)throw Error(data.detail||'Čárový kód se nepodařilo přečíst.');
-  $('eanCode').value=data.code;
-  say('EAN rozpoznán: '+data.code+'. Vyhledávám výrobek…');
+  say("Připravuji fotografii čárového kódu…");
+  const upload=await prepareEanImageForUpload(file);
+  phase="odesílání na server";
+  say("Čtu EAN z fotografie na serveru…");
+  const response=await apiFetch("/meal-ai/api/scan-ean",{
+    method:"POST",headers:{"Content-Type":upload.type || "image/jpeg"},body:upload
+  });
+  phase="odpověď serveru";
+  const data=await readMealApiResponse(response,"Čtení EAN");
+  if(!/^\d{8,14}$/.test(data.code||""))
+    throw Error("Server nevrátil platné číslo EAN.");
+  $("eanCode").value=data.code;
+  say("EAN rozpoznán: "+data.code+". Vyhledávám výrobek…");
+  phase="vyhledání výrobku";
   await lookupEan();
- }catch(error){say('Skenování EAN: '+error.message,true)}
- finally{event.target.value=''}
+ }catch(error){
+  say("Skenování EAN ("+phase+"): "+(error?.message || String(error)),true);
+ }finally{
+  event.target.value="";
+ }
 });
 let detector=null;
 function stopCamera(){state.scanning=false;const stream=state.scanStream;if(stream){for(const track of stream.getTracks())track.stop()}state.scanStream=null;$("cameraView").hidden=true;$("cameraStop").hidden=true;$("cameraStart").hidden=false}
