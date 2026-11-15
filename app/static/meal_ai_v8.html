@@ -29,6 +29,25 @@ article{border:1px solid #d5e2ea;border-radius:12px;background:#fcfdfe;padding:1
  <p class="muted">Jedna aplikace: fotografie · EAN/čárový kód · ruční zadání</p>
  <p class="warn"><b>Výzkumná funkce.</b> AI může špatně určit jídlo, porci nebo složení. U potravin z tabulek ověř původní řádek a stav přípravy. Odhady nejsou samy o sobě podkladem pro dávkování inzulínu. Zpět do situace se přenesou až po tvém potvrzení.</p>
 </header>
+
+<!-- MEAL_AI_V87_SECURE_DEVICE_SESSION_UI -->
+<section id="mealBetaAuthPanel" hidden>
+  <h2>🔐 Přihlášení do soukromé Meal AI</h2>
+  <p class="muted">Zadej <b>beta přístupový kód</b> z Renderu, nikoli OpenAI API klíč. Klíč se uloží jen na serveru; prohlížeč dostane zabezpečené přihlášení.</p>
+  <form id="mealBetaLoginForm" autocomplete="off">
+    <label for="mealBetaTokenInput">Beta přístupový kód</label>
+    <input type="password" id="mealBetaTokenInput" autocomplete="new-password" required minlength="32" maxlength="256" autocapitalize="off" spellcheck="false" placeholder="Vlož beta přístupový kód">
+    <label class="row" style="font-weight:450;align-items:flex-start">
+      <input type="checkbox" id="mealBetaRemember" style="flex:none;width:18px;min-height:18px;margin-top:3px">
+      <span><b>Zapamatovat toto zařízení na 14 dní.</b> Jen na vlastním telefonu nebo počítači.</span>
+    </label>
+    <button class="primary" id="mealBetaLoginButton" type="submit">Přihlásit do Meal AI</button>
+  </form>
+  <p id="mealBetaAuthStatus" class="muted" role="status"></p>
+</section>
+<section id="mealBetaLoggedIn" hidden>
+  <div class="row between"><span>🔐 Soukromá Meal AI – přihlášeno</span><button id="mealBetaLogout" type="button">Odhlásit toto zařízení</button></div>
+</section>
 <section>
  <div class="tabs" role="group" aria-label="Jak zadat jídlo">
   <button type="button" data-mode="photo" class="active">📷 Fotka</button>
@@ -92,32 +111,88 @@ const h = (tag,cls,text) => {const el=document.createElement(tag);if(cls)el.clas
 const state={mode:"photo",items:[],busy:false,photoUrl:null,photoFile:null,scanStream:null,scanning:false};
 // The beta access token is never part of a URL, HTML file, or API log.
 // It lasts only for this browser tab and is NOT shared with the main form.
+// MEAL_AI_V87_SECURE_DEVICE_SESSION_UI
 const betaAuth = !["localhost","127.0.0.1"].includes(window.location.hostname);
 const betaSessionKey = "diabetesMealBetaTokenForThisTab";
-function getBetaToken(){
- if(!betaAuth)return "";
- let token=sessionStorage.getItem(betaSessionKey);
- if(!token){
-  token=window.prompt("Soukromá Meal AI beta: vlož přístupový kód nastavený na Renderu. Neposílej ho do chatu.")||"";
-  token=token.trim();
-  if(token)sessionStorage.setItem(betaSessionKey,token);
- }
- if(!token)throw Error("Pro tuto betu je nutný přístupový kód.");
- if(!/^[A-Za-z0-9+\/_=-]{32,256}$/.test(token)){
-  sessionStorage.removeItem(betaSessionKey);
-  throw Error("Beta přístupový kód obsahuje neplatné znaky. Vlož znovu přesnou hodnotu MEAL_AI_BETA_TOKEN z Renderu.");
- }
- return token;
+let betaReady = !betaAuth;
+let betaSessionProbe = Promise.resolve();
+function showBetaPanel(){
+ $("mealBetaAuthPanel").hidden=!betaAuth || betaReady;
+ $("mealBetaLoggedIn").hidden=!betaAuth || !betaReady;
 }
+async function loadSavedBetaSession(){
+ if(!betaAuth)return;
+ // Remove credentials left by earlier beta versions; this version never stores them.
+ try { sessionStorage.removeItem(betaSessionKey); } catch(error) {}
+ try{
+  const response=await fetch('/meal-ai/api/session',{credentials:'same-origin',cache:'no-store'});
+  if(!response.ok)throw Error('Nelze zjistit stav přihlášení (HTTP '+response.status+').');
+  const result=await response.json();
+  betaReady=result.authenticated===true;
+ }catch(error){
+  betaReady=false;
+  $("mealBetaAuthStatus").textContent="Ověření přihlášení: "+error.message;
+ }
+ showBetaPanel();
+}
+$("mealBetaLoginForm").addEventListener('submit',async event=>{
+ event.preventDefault();
+ const token=$("mealBetaTokenInput").value.trim();
+ const remember=$("mealBetaRemember").checked;
+ if(!/^[A-Za-z0-9+\/_=-]{32,256}$/.test(token)){
+  $("mealBetaAuthStatus").textContent="Zadej přesný beta přístupový kód bez mezer nebo diakritiky.";
+  return;
+ }
+ const button=$("mealBetaLoginButton");button.disabled=true;
+ $("mealBetaAuthStatus").textContent="Ověřuji přístupový kód…";
+ try{
+  const response=await fetch('/meal-ai/api/session?remember='+(remember?'1':'0'),{
+   method:'POST',headers:{'Authorization':'Bearer '+token},
+   credentials:'same-origin',cache:'no-store'
+  });
+  if(!response.ok){
+   throw Error(response.status===401?'Nesprávný beta přístupový kód.':'Přihlášení selhalo (HTTP '+response.status+').');
+  }
+  betaReady=true;
+  $("mealBetaTokenInput").value='';
+  try {sessionStorage.removeItem(betaSessionKey);} catch(error) {}
+  $("mealBetaAuthStatus").textContent='';
+  showBetaPanel();
+  say(remember?'Zařízení přihlášeno na 14 dní.':'Přihlášeno pouze pro aktuální relaci.');
+ }catch(error){
+  $("mealBetaAuthStatus").textContent=error.message;
+ }finally{button.disabled=false;}
+});
+$("mealBetaLogout").addEventListener('click',async()=>{
+ const button=$("mealBetaLogout");button.disabled=true;
+ try{
+  const response=await fetch('/meal-ai/api/session/logout',{
+   method:'POST',credentials:'same-origin',cache:'no-store'
+  });
+  if(!response.ok)throw Error('Odhlášení selhalo (HTTP '+response.status+').');
+  betaReady=false;
+  state.items=[];
+  setMealPhoto(null);renderFoods();invalidate();
+  showBetaPanel();
+  say('Odhlášeno. K dalšímu vyhledávání se znovu přihlas.');
+ }catch(error){say(error.message,true)}finally{button.disabled=false;}
+});
 async function apiFetch(url,options={}){
+ await betaSessionProbe;
+ if(betaAuth && !betaReady){
+  showBetaPanel();
+  throw Error('Nejdřív se přihlas v panelu „Přihlášení do soukromé Meal AI“.');
+ }
  const headers=new Headers(options.headers||{});
- if(betaAuth)headers.set("Authorization","Bearer "+getBetaToken());
  let response;
- try { response=await fetch(url,{...options,headers,cache:"no-store"}); }
- catch(error) { throw Error("Požadavek se nepodařilo odeslat ("+url+"): "+error.message); }
+ try {
+  response=await fetch(url,{...options,headers,credentials:'same-origin',cache:'no-store'});
+ }catch(error){
+  throw Error('Požadavek se nepodařilo odeslat ('+url+'): '+error.message);
+ }
  if(response.status===401){
-  sessionStorage.removeItem(betaSessionKey);
-  throw Error("Nesprávný přístupový kód. Při dalším pokusu ho zadej znovu.");
+  betaReady=false;showBetaPanel();
+  throw Error('Přihlášení vypršelo. Zadej beta přístupový kód znovu.');
  }
  return response;
 }
@@ -463,9 +538,10 @@ $("apply").onclick=()=>{
 };
 $("cancel").onclick=()=>{stopCamera();if(window.parent!==window)window.parent.postMessage({type:'diabetes-assistant-meal-v8-close'},window.location.origin);else history.back()};
 mode('photo');
+betaSessionProbe = loadSavedBetaSession();
 fetch('/meal-ai/api/status',{cache:'no-store'}).then(r=>{if(!r.ok)throw Error('Modul není aktivní');return r.json()}).then(s=>{
  say(s.mode==='restricted_beta'
-  ? 'Soukromá beta • před rozpoznáváním nebo hledáním nutričních hodnot bude požadován přístupový kód.'
+  ? 'Soukromá beta • přihlas se v horním panelu, pokud zařízení ještě není ověřené.'
   : 'Lokální test • katalog '+s.book_entries+' položek • AI model '+s.model+' • klíč '+(s.openai_key_set?'připraven':'nenastaven'));
 }).catch(()=>say('Modul není dostupný.',true));
 </script>

@@ -9,11 +9,15 @@ import os
 import re
 import secrets
 import threading
+import base64
+import hashlib
+import hmac
+import time
 from datetime import datetime, timezone
 from pathlib import Path
 from urllib.parse import urlsplit
 
-from fastapi import APIRouter, HTTPException, Query, Request
+from fastapi import APIRouter, HTTPException, Query, Request, Response
 from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import FileResponse
 
@@ -25,6 +29,53 @@ PAGE = Path(__file__).resolve().parents[1] / 'static' / 'meal_ai_v8.html'
 _lock = threading.Lock()
 _counter_day = ''
 _calls_today = 0
+
+# MEAL_AI_V87_SECURE_DEVICE_SESSION
+# A signed, short-lived cookie only for Meal AI. Never store the bearer API token
+# in the browser beyond the one login request. Key rotation logs out all devices.
+SESSION_COOKIE = 'meal_ai_beta_session'
+SESSION_DAYS = 14
+SESSION_SECONDS = SESSION_DAYS * 24 * 60 * 60
+
+
+def _cookie_signing_key(expected_token: str) -> bytes:
+    return hashlib.sha256(b'MealAI-beta-device-cookie-v87\0' + expected_token.encode('ascii')).digest()
+
+
+def _session_cookie_value(expected_token: str) -> str:
+    content = f'v1.{int(time.time())}.{secrets.token_urlsafe(18)}'
+    digest = hmac.new(_cookie_signing_key(expected_token), content.encode('ascii'), hashlib.sha256).digest()
+    signature = base64.urlsafe_b64encode(digest).rstrip(b'=').decode('ascii')
+    return content + '.' + signature
+
+
+def _valid_session_cookie(value: str | None, expected_token: str) -> bool:
+    if not value or len(value) > 180:
+        return False
+    parts = value.split('.')
+    if len(parts) != 4 or parts[0] != 'v1':
+        return False
+    _, stamp, nonce, signature = parts
+    if not stamp.isascii() or not stamp.isdecimal() or len(stamp) > 11:
+        return False
+    if not re.fullmatch(r'[a-zA-Z0-9_-]{16,64}', nonce):
+        return False
+    if not re.fullmatch(r'[a-zA-Z0-9_-]{43}', signature):
+        return False
+    age = int(time.time()) - int(stamp)
+    if age < -60 or age > SESSION_SECONDS:
+        return False
+    content = '.'.join(parts[:3])
+    computed = hmac.new(_cookie_signing_key(expected_token), content.encode('ascii'), hashlib.sha256).digest()
+    expected_signature = base64.urlsafe_b64encode(computed).rstrip(b'=').decode('ascii')
+    return hmac.compare_digest(signature, expected_signature)
+
+
+def _valid_bearer(request: Request, expected_token: str) -> bool:
+    auth = request.headers.get('authorization', '')
+    return bool(auth.startswith('Bearer ') and auth[7:].isascii() and
+                secrets.compare_digest(auth[7:], expected_token))
+
 
 
 def _on_render() -> bool:
@@ -66,7 +117,11 @@ def _access(request: Request, *, private: bool = True) -> str:
         auth = request.headers.get('authorization', '')
         # compare_digest(str, str) raises TypeError if either token contains non-ASCII.
         # Reject malformed client tokens with 401 instead of crashing the endpoint.
-        if not auth.startswith('Bearer ') or not auth[7:].isascii() or not secrets.compare_digest(auth[7:], expected):
+        if auth:
+            authorized = _valid_bearer(request, expected)
+        else:
+            authorized = _valid_session_cookie(request.cookies.get(SESSION_COOKIE), expected)
+        if not authorized:
             raise HTTPException(401, 'Přístup zamítnut. Zkontroluj beta přístupový kód.', headers={'WWW-Authenticate': 'Bearer'})
     return mode
 
@@ -104,6 +159,52 @@ def _remaining(mode: str) -> int:
 def meal_page(request: Request):
     _access(request, private=False)
     return FileResponse(PAGE, media_type='text/html', headers={'Cache-Control': 'no-store'})
+
+
+
+
+@router.get('/api/session')
+def beta_session_status(request: Request, response: Response):
+    """Public yes/no probe. Does not reveal token, identity or other private data."""
+    mode = _access(request, private=False)
+    response.headers['Cache-Control'] = 'no-store'
+    if mode != 'restricted_beta':
+        return {'authenticated': True, 'remember_days': 0}
+    token = _required_beta_token()
+    return {'authenticated': _valid_session_cookie(request.cookies.get(SESSION_COOKIE), token),
+            'remember_days': SESSION_DAYS}
+
+
+@router.post('/api/session')
+def beta_session_login(request: Request, response: Response,
+                       remember: bool = Query(default=False)):
+    """One-time bearer authentication issues HttpOnly SameSite cookie."""
+    mode = _access(request, private=False)
+    response.headers['Cache-Control'] = 'no-store'
+    if mode != 'restricted_beta':
+        return {'authenticated': True, 'remembered': False}
+    token = _required_beta_token()
+    if not _valid_bearer(request, token):
+        raise HTTPException(401, 'Nesprávný beta přístupový kód.',
+                            headers={'WWW-Authenticate': 'Bearer'})
+    response.set_cookie(
+        key=SESSION_COOKIE,
+        value=_session_cookie_value(token),
+        max_age=SESSION_SECONDS if remember else None,
+        path='/meal-ai',
+        secure=True,
+        httponly=True,
+        samesite='strict',
+    )
+    return {'authenticated': True, 'remembered': remember, 'remember_days': SESSION_DAYS if remember else 0}
+
+
+@router.post('/api/session/logout')
+def beta_session_logout(request: Request, response: Response):
+    _access(request, private=False)  # preserves same-origin protection
+    response.delete_cookie(SESSION_COOKIE, path='/meal-ai', secure=True, httponly=True, samesite='strict')
+    response.headers['Cache-Control'] = 'no-store'
+    return {'authenticated': False}
 
 
 @router.get('/api/status')
