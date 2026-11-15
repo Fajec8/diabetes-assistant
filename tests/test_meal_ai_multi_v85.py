@@ -22,7 +22,9 @@ def test_manual_added_to_same_basket():
     assert 'id="manualAdd"' in page
     assert 'manual:true,manualCarbs:String(carbs)' in page
     assert 'if(item.manual)' in page
-    assert 'state.items.push(newItem(data.name,' in page  # barcode product addition
+    assert 'state.items.push(newItem(' in page  # EAN se pridava do spolecneho jidla
+    assert 'sourceId:code' in page  # EAN zustava zachovany
+    assert 'needsLabelEntry:missing' in page  # nenalezeny vyrobek lze doplnit rucne
     assert 'state.items.map(item=>' in page  # combined submit
     assert 'diabetes-assistant-meal-v8' in page
     assert 'window.location.origin' in page

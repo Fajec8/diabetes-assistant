@@ -85,6 +85,8 @@ article{border:1px solid #d5e2ea;border-radius:12px;background:#fcfdfe;padding:1
 </main>
 <script>
 "use strict";
+// MEAL_AI_V86_OFF_MANUAL_FALLBACK
+// MEAL_AI_V86_PACKAGE_WEIGHT
 const $ = id => document.getElementById(id);
 const h = (tag,cls,text) => {const el=document.createElement(tag);if(cls)el.className=cls;if(text!==undefined)el.textContent=text;return el};
 const state={mode:"photo",items:[],busy:false,photoUrl:null,photoFile:null,scanStream:null,scanning:false};
@@ -192,7 +194,7 @@ async function prepareEanImageForUpload(file) {
 }
 
 function invalidate(){ $("confirm").checked=false;updateTotal() }
-function newItem(name="",settings={}){return {name,manual:!!settings.manual,manualCarbs:settings.manualCarbs??"",alternatives:settings.alternatives||[],portion:settings.portion??"",confidence:settings.confidence||"",uncertainty:settings.uncertainty||"",per100:settings.per100??"",source:settings.source||"",sourceId:settings.sourceId||"",sourceUrl:settings.sourceUrl||"",sourceWarning:settings.sourceWarning||"",candidates:[],searching:false,error:"",searchVersion:0,selected:null}}
+function newItem(name="",settings={}){return {name,manual:!!settings.manual,manualCarbs:settings.manualCarbs??"",alternatives:settings.alternatives||[],portion:settings.portion??"",confidence:settings.confidence||"",uncertainty:settings.uncertainty||"",per100:settings.per100??"",source:settings.source||"",sourceId:settings.sourceId||"",sourceUrl:settings.sourceUrl||"",sourceWarning:settings.sourceWarning||"",needsLabelEntry:!!settings.needsLabelEntry,packageWeightG:settings.packageWeightG??null,packageQuantity:settings.packageQuantity||"",candidates:[],searching:false,error:"",searchVersion:0,selected:null}}
 // MEAL_AI_V85_COMBINED_MEAL: one basket for EAN + photos + manual entries.
 function updateTotal(){
  let valid=state.items.length>0&&state.items.length<=20,total=0,massTotal=0,hasManual=false;
@@ -317,6 +319,8 @@ function renderFoods(){
    card.append(grid);card.append(h('p','muted','Ručně potvrzený údaj – nevypočítává se z gramáže.'));
    holder.append(card);return;
   }
+  if(item.needsLabelEntry)card.append(h('p','flag',
+   'EAN '+item.sourceId+' rozpoznán, ale nutriční hodnoty nejsou dostupné. Oprav název, doplň porci a podle etikety vyplň sacharidy / 100 g a původ hodnoty. Bez toho nejde potvrdit celé jídlo.'));
   if(item.uncertainty)card.append(h('p','flag',"Nejistota AI: "+item.uncertainty));
   const grid=h('div','grid');const nameBox=h('div');nameBox.append(h('label','',"Název a možná alternativa"));
   const options=[item.name,...item.alternatives].filter((a,i,arr)=>a&&arr.indexOf(a)===i);
@@ -327,9 +331,18 @@ function renderFoods(){
   }
   const nameInput=h('input');nameInput.value=item.name;nameInput.maxLength=100;nameInput.placeholder='Opravit název';nameInput.onchange=()=>{item.name=nameInput.value.trim();clearNutrition(item);renderFoods();lookupFood(item)};
   nameBox.append(nameInput);grid.append(nameBox);
-  const portionBox=h('div');portionBox.append(h('label','',"Hmotnost porce v g (pouze odhad)"));
+  const portionBox=h('div');portionBox.append(h('label','',"Hmotnost skutečně snědené porce v g"));
   const portion=h('input');portion.type='number';portion.step='any';portion.min='0.1';portion.max='3000';portion.inputMode='decimal';portion.value=item.portion??'';
   portion.placeholder='Oprav gramáž';portion.oninput=()=>{item.portion=portion.value;invalidate()};portionBox.append(portion);
+  if(item.packageWeightG!==null){
+   portionBox.append(h('p','flag',
+    'Předvyplněná hmotnost CELÉHO balení podle Open Food Facts: '+item.packageWeightG+' g.'+
+    (item.packageQuantity?' Na obalu: '+item.packageQuantity+'.':'')+
+    ' Pokud nesníš celé balení, číslo uprav. Ověř skutečnou hmotnost na etiketě.'));
+  }else if(item.packageQuantity){
+   portionBox.append(h('p','muted',
+    'Velikost balení v databázi: '+item.packageQuantity+'. Hmotnost v g nebyla jednoznačná, doplň ji podle obalu.'));
+  }
   if(item.confidence)portionBox.append(h('p','muted',"Jistota odhadu porce: "+item.confidence));
   grid.append(portionBox);card.append(grid);
   card.append(h('h3','',"Sacharidy z databáze (vyber zdroj)"));
@@ -341,7 +354,7 @@ function renderFoods(){
    button.onclick=()=>selectCandidate(item,candidate);card.append(button);
    if(candidate.source_url && !(betaAuth && candidate.source==='private_book')){const link=h('a','',"Otevřít původní zdroj");link.href=candidate.source_url;link.target='_blank';link.rel='noopener noreferrer';card.append(link)}
   }
-  const edit=h('details');edit.append(h('summary','muted','Nenašli jsme vhodnou položku? Ručně doplnit nutriční hodnotu'));
+  const edit=h('details');if(item.needsLabelEntry)edit.open=true;edit.append(h('summary','muted','Nenašli jsme vhodnou položku? Ručně doplnit nutriční hodnotu'));
   const editGrid=h('div','grid');const cWrap=h('div');cWrap.append(h('label','',"Sacharidy / 100 g"));
   const carbs=h('input');carbs.type='number';carbs.step='any';carbs.min='0';carbs.max='100';carbs.value=item.per100;carbs.oninput=()=>{item.per100=carbs.value;item.selected=null;item.sourceWarning='';invalidate()};cWrap.append(carbs);editGrid.append(cWrap);
   const srcWrap=h('div');srcWrap.append(h('label','',"Původ hodnoty (povinný)"));const source=h('input');source.maxLength=200;source.placeholder='Etiketa, konkrétní recept…';source.value=item.source;source.oninput=()=>{item.source=source.value;item.selected=null;invalidate()};srcWrap.append(source);editGrid.append(srcWrap);
@@ -359,8 +372,24 @@ async function lookupEan(){
  try{
   const response=await apiFetch('/meal-ai/api/ean/'+encodeURIComponent(code));
   const data=await readMealApiResponse(response,'Vyhledání výrobku');
-  state.items.push(newItem(data.name,{per100:data.carbs_per_100g,source:data.source_detail,sourceId:data.source_id,sourceUrl:data.source_url,sourceWarning:data.warning}));
-  mode('ean');renderFoods();say('Nalezeno: '+data.name+'. Ještě doplň množství porce a ověř údaj podle obalu.');
+  const missing=data.requires_manual===true;
+  state.items.push(newItem(data.name||('Výrobek EAN '+code),{
+   per100:missing?'':data.carbs_per_100g,
+   source:missing?'':(data.source_detail||''),sourceId:code,
+   sourceUrl:missing?'':(data.source_url||''),sourceWarning:data.warning||'',
+   needsLabelEntry:missing,
+   portion:data.package_weight_g??'',
+   packageWeightG:data.package_weight_g??null,
+   packageQuantity:data.package_quantity||''
+  }));
+  mode('ean');renderFoods();
+  if(missing){
+   say('EAN '+code+' byl správně načten, ale chybí ověřené údaje v Open Food Facts. Položka je zachovaná. Dole doplň podle etikety název, gramáž, sacharidy na 100 g a zdroj.',true);
+   const last=$('foodList').lastElementChild;
+   if(last)requestAnimationFrame(()=>last.scrollIntoView({behavior:'smooth',block:'start'}));
+  }else{
+   say('Nalezeno: '+data.name+'. Ještě doplň množství porce a ověř údaj podle obalu.');
+  }
  }catch(error){say(error.message,true)}finally{state.busy=false;updateTotal()}
 }
 $("eanLookup").onclick=lookupEan;

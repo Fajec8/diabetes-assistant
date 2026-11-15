@@ -140,6 +140,52 @@ def _json_get(url: str, timeout: int = 12) -> dict:
     return json.loads(content)
 
 
+# MEAL_AI_V86_PACKAGE_WEIGHT: trustworthy mass from Open Food Facts,
+# not a serving-size or volume-to-grams guess.
+def _off_package_weight_g(product: dict) -> float | None:
+    """Net grams for ONE unambiguously sized package; unknown otherwise.
+
+    The OFF `product_quantity` is the full package size, so multi-packs
+    must not silently become one user's eaten portion.
+    """
+    if not isinstance(product, dict):
+        return None
+    quantity = str(product.get('quantity') or '').strip()
+    # E.g. 4 x 125 g or 2×150g: OFF normalized product_quantity is 500/300,
+    # NOT the weight of the individual yogurt cup.
+    if re.search(r'(?<![0-9])\d+\s*[x×*]\s*\d+', quantity, re.I):
+        return None
+
+    value = product.get('product_quantity')
+    unit = str(product.get('product_quantity_unit') or '').strip().casefold()
+    # ml and litres do not have a reliable grams conversion without density.
+    if unit and unit not in ('g', 'kg'):
+        return None
+    match = re.fullmatch(r'\s*(?:℮\s*)?(\d+(?:[.,]\d+)?)\s*(g|kg)\s*(?:℮\s*)?', quantity, re.I)
+    written_grams = None
+    if match:
+        written_grams = float(match.group(1).replace(',', '.')) * (1000 if match.group(2).lower() == 'kg' else 1)
+    if re.fullmatch(r'\s*\d+(?:[.,]\d+)?\s*(ml|l|cl)\s*', quantity, re.I):
+        return None
+    if unit in ('g', 'kg') and value is not None and not isinstance(value, bool):
+        try:
+            grams = float(str(value).strip().replace(',', '.')) * (1000 if unit == 'kg' else 1)
+        except (TypeError, ValueError, OverflowError):
+            grams = float('nan')
+        # The computed and label values must not contradict one another.
+        if written_grams is not None and abs(written_grams - grams) > 0.6:
+            return None
+        if math.isfinite(grams) and 0.1 <= grams <= 3000:
+            return round(grams, 1)
+    # When the structured quantity is absent, accept only the full simple label.
+    if written_grams is not None and math.isfinite(written_grams) and 0.1 <= written_grams <= 3000:
+        return round(written_grams, 1)
+    return None
+
+
+def _off_package_quantity_text(product: dict) -> str:
+    return str(product.get('quantity') or '').strip()[:90] if isinstance(product, dict) else ''
+
 def parse_off_product(barcode: str, data: dict) -> dict:
     if data.get('status') not in (1, '1', 'success') or not isinstance(data.get('product'), dict):
         raise ValueError('Výrobek s tímto EAN nebyl nalezen.')
@@ -151,6 +197,8 @@ def parse_off_product(barcode: str, data: dict) -> dict:
     name = str(product.get('product_name_cs') or product.get('product_name') or 'Výrobek ' + barcode).strip()[:120]
     return {
         'name': name, 'carbs_per_100g': carbs,
+        'package_weight_g': _off_package_weight_g(product),
+        'package_quantity': _off_package_quantity_text(product),
         'source': 'open_food_facts', 'source_id': barcode,
         'source_url': f'https://world.openfoodfacts.org/product/{barcode}',
         'source_detail': f'Open Food Facts, kód {barcode}',
@@ -160,11 +208,56 @@ def parse_off_product(barcode: str, data: dict) -> dict:
     }
 
 
+# MEAL_AI_V86_OFF_MANUAL_FALLBACK: an absent OFF record is not a lost meal.
+def _unlisted_barcode(barcode: str, reason: str, name: str | None = None, product: dict | None = None) -> dict:
+    # Keep this explicitly incomplete. Never invent nutrient values or claim
+    # that an EAN alone verifies a product identity.
+    return {
+        'found': False,
+        'requires_manual': True,
+        'code': barcode,
+        'name': (name or ('Výrobek EAN ' + barcode)).strip()[:120],
+        'carbs_per_100g': None,
+        'package_weight_g': _off_package_weight_g(product or {}),
+        'package_quantity': _off_package_quantity_text(product or {}),
+        'source': '',
+        'source_id': barcode,
+        'source_url': '',
+        'source_detail': '',
+        'warning': reason + ' Přepiš název, sacharidy na 100 g a hmotnost podle obalu.',
+        'verified': False,
+    }
+
+
 def barcode_product(barcode: str) -> dict:
     if not re.fullmatch(r'\d{8,14}', barcode):
         raise ValueError('EAN/UPC musí mít 8 až 14 číslic.')
-    query = urlencode({'fields': 'product_name,product_name_cs,nutriments'})
-    return parse_off_product(barcode, _json_get(f'{OFF_URL}{barcode}?{query}'))
+    query = urlencode({'fields': 'product_name,product_name_cs,nutriments,quantity,product_quantity,product_quantity_unit'})
+    try:
+        data = _json_get(f'{OFF_URL}{barcode}?{query}')
+    except ValueError as exc:
+        # Product-not-found on the upstream API must not destroy the meal.
+        # Other errors (429, 503, timeout etc.) remain errors, not fake data.
+        if str(exc) == 'Nutriční databáze odpověděla HTTP 404.':
+            return _unlisted_barcode(barcode, 'Open Food Facts vrátilo HTTP 404.')
+        raise
+    try:
+        return parse_off_product(barcode, data)
+    except ValueError as exc:
+        message = str(exc)
+        if message not in (
+            'Výrobek s tímto EAN nebyl nalezen.',
+            'Výrobek nemá údaj sacharidů na 100 g/ml.',
+        ):
+            raise
+        product = data.get('product') if isinstance(data, dict) else None
+        if not isinstance(product, dict):
+            product = {}
+        name = str(product.get('product_name_cs') or product.get('product_name') or '').strip()
+        reason = ('Výrobek nemá v Open Food Facts údaj sacharidů.'
+                  if message.startswith('Výrobek nemá')
+                  else 'Výrobek nebyl v Open Food Facts nalezen.')
+        return _unlisted_barcode(barcode, reason, name or None, product)
 
 
 TRANSLATIONS = {
