@@ -53,7 +53,10 @@ def test_anonymous_request_denied_without_calling_upstream(monkeypatch):
     monkeypatch.setattr(live, 'get_snapshot', lambda: pytest.fail('Network called before auth'))
     with app_client() as c:
         assert c.get('/meal-ai/api/live-dexcom').status_code == 401
-        assert c.get('/meal-ai/live-dexcom').status_code == 401
+        page = c.get('/meal-ai/live-dexcom')
+        assert page.status_code == 200  # the public HTML shell
+        assert '/meal-ai/api/live-dexcom' in page.text
+        assert 'dummy' not in page.text  # no credentials in HTML
 
 
 def test_private_cookie_can_read_only_configured_data(monkeypatch):

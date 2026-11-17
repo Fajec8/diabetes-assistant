@@ -16,7 +16,9 @@ PAGE = Path(__file__).resolve().parents[1] / 'static' / 'dexcom_live_v88.html'
 
 @router.get('/live-dexcom', include_in_schema=False)
 def live_page(request: Request):
-    _access(request)
+    # A cross-site first navigation may omit SameSite=Strict cookies.
+    # Only the public HTML shell is served here; /api/live-dexcom remains private.
+    _access(request, private=False)
     return FileResponse(PAGE, media_type='text/html', headers={
         'Cache-Control': 'no-store',
         'X-Content-Type-Options': 'nosniff',
