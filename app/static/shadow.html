@@ -192,6 +192,18 @@
 .dexcom-live-v89-actions button { flex: 1 1 160px; }
 .dexcom-live-v89-error { color: #a12733; font-weight: 650; }
 .dexcom-live-v89-status { font-size: 14px; margin: 10px 0; line-height: 1.45; }
+/* DEXCOM_OUTCOME_V90: only shown when WAITING_OUTCOME */
+.dexcom-outcome-v90 { margin: 12px 0 18px; padding: 14px; border: 1px solid #b6dfd8; background: #f4faf8; border-radius: 13px; }
+.dexcom-outcome-v90 h3 { margin-top: 0; }
+.dexcom-outcome-v90 p { line-height: 1.5; }
+.dexcom-outcome-v90-preview { margin-top: 12px; background: white; border: 1px solid #cbded9; border-radius: 12px; padding: 10px 12px; }
+.dexcom-outcome-v90-row { padding: 8px 2px; border-bottom: 1px solid #e4ebe9; font-size: 14px; }
+.dexcom-outcome-v90-row:last-child { border: 0; }
+.dexcom-outcome-v90-row strong { font-size: 16px; }
+.dexcom-outcome-v90-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+.dexcom-outcome-v90-actions button { flex: 1 1 150px; }
+.dexcom-outcome-v90-status { font-size: 14px; margin: 8px 0; }
+
 
 </style>
 </head>
@@ -472,6 +484,23 @@
     <div id="outcomeCard" class="card hidden">
         <h2>3. Jak situace dopadla?</h2>
         <p class="muted">Doplň glykémii po rozhodnutí. Nemusíš mít všechny hodnoty.</p>
+        <!-- DEXCOM_OUTCOME_V90: retrospective research-only prefill -->
+        <div id="dexcomOutcomeV90" class="dexcom-outcome-v90">
+            <h3>📡 Výsledek z Dexcomu</h3>
+            <p class="mini">Načti skutečná měření přibližně 30, 60, 90, 120 a 180 minut <strong>po začátku této uložené situace</strong>. Neproběhlé nebo chybějící hodnoty necháme nedotčené. Předvyplnění neukládá výsledek a není léčebným doporučením.</p>
+            <button id="dexcomOutcomeV90Fetch" type="button" class="secondary">📡 Načíst hodnoty výsledku z Dexcomu</button>
+            <p id="dexcomOutcomeV90Status" class="dexcom-outcome-v90-status" role="status" aria-live="polite"></p>
+            <div id="dexcomOutcomeV90Preview" class="dexcom-outcome-v90-preview hidden">
+                <p class="mini" id="dexcomOutcomeV90Context"></p>
+                <div id="dexcomOutcomeV90Rows"></div>
+                <p class="mini">Při potvrzení se přepíšou <strong>pouze nalezené a povolené hodnoty</strong>, i když jsi je už zadal ručně. Ostatní pole a výchozí glykémie zůstanou beze změny. Časy porovnej s Dexcomem.</p>
+                <div class="dexcom-outcome-v90-actions">
+                    <button id="dexcomOutcomeV90Apply" type="button" class="primary">✓ Potvrdit a vyplnit výsledek</button>
+                    <button id="dexcomOutcomeV90Cancel" type="button" class="secondary">Zrušit</button>
+                </div>
+            </div>
+        </div>
+
         <div
             id="overlapWarning"
             class="warning hidden"
@@ -2310,6 +2339,193 @@ byId("openMealAiButton").addEventListener("click", openMealAi);
 byId("mealAiClose").addEventListener("click", closeMealAi);
 byId("mealCarbs").addEventListener("input", resetMealAiItems);
 byId("mealDescription").addEventListener("input", resetMealAiItems);
+
+// DEXCOM_OUTCOME_V90: no automatic updates, no insulin logic, no session writes.
+const DEXCOM_OUTCOME_V90_HORIZONS = [30, 60, 90, 120, 180];
+const DEXCOM_OUTCOME_V90_PREVIEW_MS = 10 * 60 * 1000;
+let dexcomOutcomeV90Pending = null;
+let dexcomOutcomeV90Loading = false;
+
+function dexcomOutcomeV90Clear(message = "") {
+    dexcomOutcomeV90Pending = null;
+    byId("dexcomOutcomeV90Preview").classList.add("hidden");
+    byId("dexcomOutcomeV90Rows").textContent = "";
+    byId("dexcomOutcomeV90Status").textContent = message;
+}
+
+function dexcomOutcomeV90NextStart(decisionMs) {
+    // Shadow's existing overlap rule takes precedence over live CGM readings.
+    const later = activeSessions.map(session => Date.parse(session.decision_at))
+        .filter(ms => Number.isFinite(ms) && ms > decisionMs);
+    return later.length ? Math.min(...later) : Infinity;
+}
+
+function dexcomOutcomeV90Prepare(snapshot, session, nowMs = Date.now()) {
+    if (!snapshot || snapshot.source !== "dexcom_share_unofficial" ||
+        !snapshot.fields || typeof snapshot.fields !== "object") {
+        throw new Error("Dexcom neposkytl platný výsledek.");
+    }
+    const decisionMs = Date.parse(session.decision_at);
+    const echoedDecisionMs = Date.parse(snapshot.decision_at);
+    if (!Number.isFinite(decisionMs) || !Number.isFinite(echoedDecisionMs) ||
+        Math.abs(echoedDecisionMs - decisionMs) > 1000) {
+        throw new Error("Čas situace neodpovídá Dexcom historii. Nic se nezměnilo.");
+    }
+    const limitMs = dexcomOutcomeV90NextStart(decisionMs);
+    const fields = {};
+    for (const minutes of DEXCOM_OUTCOME_V90_HORIZONS) {
+        const id = "g" + minutes;
+        const targetMs = decisionMs + minutes * 60000;
+        const raw = snapshot.fields[String(minutes)];
+        // Never fill a future horizon or one at/after another active situation.
+        if (targetMs > nowMs || targetMs >= limitMs || byId(id).disabled || !raw) {
+            fields[id] = null;
+            continue;
+        }
+        const when = Date.parse(raw.system_time);
+        const glucose = dexcomLiveV89Number(raw.value_mmol_l);
+        if (glucose === null || !Number.isFinite(when) ||
+            when > nowMs + 120000 || Math.abs(when - targetMs) > 6 * 60000 ||
+            when >= limitMs) {
+            fields[id] = null;
+            continue;
+        }
+        fields[id] = { value: glucose, measuredMs: when, targetMs };
+    }
+    return { sessionId: session.id, decisionMs, fields, loadedAt: nowMs };
+}
+
+function dexcomOutcomeV90ShowPreview(candidate) {
+    const started = new Date(candidate.decisionMs).toLocaleString("cs-CZ");
+    byId("dexcomOutcomeV90Context").textContent = "Začátek situace: " + started +
+        ". Nalezená měření jsou přiřazena ke konkrétním časům, bez dopočítávání.";
+    const parent = byId("dexcomOutcomeV90Rows");
+    parent.textContent = "";
+    let matched = 0;
+    for (const minutes of DEXCOM_OUTCOME_V90_HORIZONS) {
+        const record = candidate.fields["g" + minutes];
+        const row = document.createElement("div");
+        row.className = "dexcom-outcome-v90-row";
+        const label = "+" + minutes + " min: ";
+        if (record) {
+            matched++;
+            const clock = new Date(record.measuredMs).toLocaleTimeString("cs-CZ", {hour: "2-digit", minute: "2-digit"});
+            row.textContent = label + String(record.value).replace(".", ",") + " mmol/l (měřeno " + clock + ")";
+        } else {
+            row.textContent = label + "nedostupné, ještě nenastalo nebo je zakázáno kvůli překryvu";
+        }
+        parent.appendChild(row);
+    }
+    byId("dexcomOutcomeV90Apply").disabled = matched === 0;
+    byId("dexcomOutcomeV90Preview").classList.remove("hidden");
+    byId("dexcomOutcomeV90Status").textContent = matched
+        ? "Načteno " + matched + " z 5 hodnot. Zkontroluj časy, pak potvrď převzetí."
+        : "Nenalezena žádná použitelná hodnota. Nic nebude přepsáno.";
+}
+
+async function dexcomOutcomeV90Fetch() {
+    if (dexcomOutcomeV90Loading) return;
+    dexcomOutcomeV90Clear("Načítám skutečná měření pro vybranou situaci…");
+    if (byId("outcomeCard").classList.contains("hidden")) {
+        dexcomOutcomeV90Clear("Nejdřív otevři situaci, která čeká na vyplnění výsledku.");
+        return;
+    }
+    const sessionId = localStorage.getItem(storageKey);
+    if (!sessionId) {
+        dexcomOutcomeV90Clear("Chybí vybraná situace.");
+        return;
+    }
+    dexcomOutcomeV90Loading = true;
+    byId("dexcomOutcomeV90Fetch").disabled = true;
+    try {
+        const session = await requestJson("/decision-sessions/" + encodeURIComponent(sessionId));
+        if (session.id !== sessionId || session.status !== "WAITING_OUTCOME") {
+            throw new Error("Vybraná situace už nečeká na výsledek.");
+        }
+        await loadActiveSessions();
+        if (localStorage.getItem(storageKey) !== sessionId ||
+            byId("outcomeCard").classList.contains("hidden")) {
+            throw new Error("Mezitím došlo k přepnutí situace.");
+        }
+        const response = await fetch("/meal-ai/api/live-dexcom/outcome", {
+            method: "POST", credentials: "same-origin", cache: "no-store",
+            headers: {"Content-Type": "application/json", "Accept": "application/json"},
+            body: JSON.stringify({decision_at: session.decision_at})
+        });
+        if (response.status === 401) {
+            throw new Error("Nejdřív se přihlas do soukromé Meal AI ve stejné aplikaci.");
+        }
+        const snapshot = await response.json().catch(() => null);
+        if (!response.ok) {
+            const detail = snapshot && typeof snapshot.detail === "string" ? snapshot.detail : "HTTP " + response.status;
+            throw new Error("Historii Dexcomu se nepodařilo načíst: " + detail);
+        }
+        if (localStorage.getItem(storageKey) !== sessionId ||
+            byId("outcomeCard").classList.contains("hidden")) {
+            throw new Error("Situace se během načítání změnila.");
+        }
+        const candidate = dexcomOutcomeV90Prepare(snapshot, session);
+        dexcomOutcomeV90Pending = candidate;
+        dexcomOutcomeV90ShowPreview(candidate);
+    } catch (error) {
+        dexcomOutcomeV90Clear(error.message || "Načtení selhalo.");
+    } finally {
+        dexcomOutcomeV90Loading = false;
+        byId("dexcomOutcomeV90Fetch").disabled = false;
+    }
+}
+
+async function dexcomOutcomeV90Apply() {
+    const candidate = dexcomOutcomeV90Pending;
+    if (!candidate || dexcomOutcomeV90Loading) return;
+    const sessionId = localStorage.getItem(storageKey);
+    if (candidate.sessionId !== sessionId || byId("outcomeCard").classList.contains("hidden")) {
+        dexcomOutcomeV90Clear("Situace se změnila. Nic nebylo převzato.");
+        return;
+    }
+    if (Date.now() - candidate.loadedAt > DEXCOM_OUTCOME_V90_PREVIEW_MS) {
+        dexcomOutcomeV90Clear("Náhled je starší než 10 minut. Načti data znovu.");
+        return;
+    }
+    dexcomOutcomeV90Loading = true;
+    byId("dexcomOutcomeV90Apply").disabled = true;
+    try {
+        const session = await requestJson("/decision-sessions/" + encodeURIComponent(sessionId));
+        await loadActiveSessions();
+        const currentDecisionMs = Date.parse(session.decision_at);
+        if (localStorage.getItem(storageKey) !== sessionId ||
+            byId("outcomeCard").classList.contains("hidden") ||
+            session.status !== "WAITING_OUTCOME" || session.id !== sessionId ||
+            !Number.isFinite(currentDecisionMs) ||
+            Math.abs(currentDecisionMs - candidate.decisionMs) > 1000) {
+            throw new Error("Situace mezitím změnila stav. Formulář nebyl přepsán.");
+        }
+        const nextMs = dexcomOutcomeV90NextStart(candidate.decisionMs);
+        const edits = [];
+        for (const minutes of DEXCOM_OUTCOME_V90_HORIZONS) {
+            const id = "g" + minutes;
+            const reading = candidate.fields[id];
+            if (!reading || byId(id).disabled ||
+                reading.targetMs >= nextMs || reading.measuredMs >= nextMs) continue;
+            edits.push({id, value: String(reading.value)});
+        }
+        if (!edits.length) {
+            throw new Error("Žádná dostupná hodnota není pro tuto situaci povolena.");
+        }
+        // The only state mutation: explicit confirmation to existing input fields.
+        for (const edit of edits) byId(edit.id).value = edit.value;
+        dexcomOutcomeV90Clear("Předvyplněno " + edits.length + " hodnot. Zkontroluj je; výsledek se sám neuložil.");
+    } catch (error) {
+        dexcomOutcomeV90Clear(error.message || "Převzetí se nepodařilo.");
+    } finally {
+        dexcomOutcomeV90Loading = false;
+        byId("dexcomOutcomeV90Apply").disabled = false;
+    }
+}
+
+byId("dexcomOutcomeV90Fetch").addEventListener("click", dexcomOutcomeV90Fetch);
+byId("dexcomOutcomeV90Apply").addEventListener("click", dexcomOutcomeV90Apply);
+byId("dexcomOutcomeV90Cancel").addEventListener("click", () => dexcomOutcomeV90Clear("Převzetí zrušeno; formulář se nezměnil."));
 
 // DEXCOM_LIVE_V89_SHADOW_BRIDGE
 // Pure read-only transport. Never auto-create a session, calculate a dose, or save.

@@ -9,6 +9,7 @@ from fastapi.responses import FileResponse
 
 from app.routers.meal_ai_v8 import _access
 from app.services import dexcom_share_live_v88 as source
+from app.services import dexcom_outcome_v90 as outcome_source
 
 router = APIRouter(prefix='/meal-ai', tags=['Private Dexcom LIVE research beta'])
 PAGE = Path(__file__).resolve().parents[1] / 'static' / 'dexcom_live_v88.html'
@@ -36,3 +37,30 @@ async def live_data(request: Request):
         return await run_in_threadpool(source.get_snapshot)
     except source.DexcomLiveError as exc:
         raise HTTPException(503, str(exc)) from None
+
+
+# DEXCOM_OUTCOME_V90: read-only matched outcome times, authorized by beta cookie.
+@router.post('/api/live-dexcom/outcome')
+async def live_outcome_data(request: Request):
+    _access(request)
+    if not source.live_configured():
+        raise HTTPException(503, 'Dexcom LIVE není nastavený.')
+    body = await request.body()
+    if len(body) > 256:
+        raise HTTPException(400, 'Neplatný čas začátku situace.')
+    try:
+        import json
+        payload = json.loads(body)
+        when = payload.get('decision_at') if isinstance(payload, dict) else None
+    except (ValueError, UnicodeDecodeError, TypeError):
+        when = None
+    if not isinstance(when, str):
+        raise HTTPException(400, 'Neplatný čas začátku situace.')
+    try:
+        result = await run_in_threadpool(outcome_source.get_outcome_snapshot, when)
+    except ValueError as exc:
+        raise HTTPException(400, str(exc)) from None
+    except source.DexcomLiveError as exc:
+        raise HTTPException(503, str(exc)) from None
+    from fastapi.responses import JSONResponse
+    return JSONResponse(result, headers={'Cache-Control': 'no-store'})
