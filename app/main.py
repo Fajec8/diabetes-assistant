@@ -73,6 +73,9 @@ import os as _meal_ai_os
 if (_meal_ai_os.getenv("MEAL_AI_V8_LOCAL", "0") == "1" or _meal_ai_os.getenv("MEAL_AI_BETA", "0") == "1"):
     from app.routers.meal_ai_v8 import router as _meal_ai_router
     app.include_router(_meal_ai_router)
+    # DEXCOM_LIVE_V88_PRIVATE_READ_ONLY
+    from app.routers.dexcom_live_v88 import router as _dexcom_live_router
+    app.include_router(_dexcom_live_router)
 
 
 

@@ -1,0 +1,49 @@
+<!doctype html><html lang="cs"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>Dexcom LIVE – Diabetes Assistant</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#f4f7fa;color:#182c3c;font-family:system-ui,-apple-system,sans-serif}.wrap{max-width:700px;margin:auto;padding:16px 14px 42px}h1{font-size:26px;margin:12px 0 4px}.muted{color:#536779}a{color:#075c91}.card{background:white;padding:20px;border-radius:16px;margin-top:15px;box-shadow:0 3px 14px #18345011}.big{font-size:57px;font-weight:800;letter-spacing:-2px}.unit{font-size:18px;color:#536779;font-weight:500}.trend{font-size:31px}button{padding:12px 17px;background:#087d75;color:white;border:0;border-radius:10px;font-size:16px;font-weight:650;cursor:pointer}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.small{padding:11px;border:1px solid #dde6e9;border-radius:12px}.small strong{display:block;font-size:22px}.notice{padding:14px;background:#fff4da;color:#7b4b00;border-radius:12px;margin:12px 0}.danger{background:#f9e1e3;color:#8c1d28}.meta{margin-top:11px;font-size:14px}.graph{width:100%;height:200px;display:block;overflow:visible}.foot{font-size:13px;color:#536779;line-height:1.5}#error{white-space:pre-wrap}@media(max-width:400px){.big{font-size:48px}}
+</style></head><body><main class="wrap">
+<p><a href="/decision-sessions/shadow">← Shadow</a></p>
+<h1>📡 Dexcom LIVE <small class="unit">(test)</small></h1>
+<p class="muted">Čerstvá data ze služby Dexcom Share. Pouze zobrazení, bez dávkování inzulínu.</p>
+<section class="card"><p id="status" aria-live="polite">Načítám data…</p><div id="reading" hidden><div class="big"><span id="value">—</span> <span id="arrow" class="trend"></span> <span class="unit">mmol/l</span></div><p class="meta">Měření: <strong id="measured">—</strong></p><p class="meta">Stáří: <strong id="age">—</strong></p><p id="stale" class="notice danger" hidden>⚠️ Data nejsou čerstvá. Ověř hodnotu v oficiální aplikaci Dexcom.</p><div class="grid"><div class="small">−15 min<strong id="v15">—</strong></div><div class="small">−30 min<strong id="v30">—</strong></div><div class="small">−60 min<strong id="v60">—</strong></div></div></div><p><button id="refresh" type="button">↻ Obnovit</button></p><p id="error" class="muted" role="alert"></p></section>
+<section class="card"><h2>Posledních 90 minut</h2><svg id="chart" class="graph" role="img" aria-label="Graf posledních hodnot glykémie" viewBox="0 0 600 200"><text x="10" y="100" fill="currentColor">Zatím nejsou data.</text></svg><p class="muted" id="count"></p></section>
+<div class="notice">Tato funkce čte neoficiální rozhraní Dexcom Share. Může mít zpoždění či výpadky a <strong>nenahrazuje aplikaci Dexcom, její alarmy, glukometr ani léčebné pokyny</strong>. Hodnoty nikdy automaticky nepřecházejí do Shadow nebo k dávkování.</div>
+<p class="foot">Stránka používá soukromé přihlášení Meal AI V8.7. Data se získávají pouze při obnovení, přibližně jednou za minutu. Neposílají se do OpenAI a tato stránka je neukládá do databáze.</p></main>
+<script>
+'use strict';
+const $=id=>document.getElementById(id);
+const fmt=v=>Number.isFinite(Number(v))?Number(v).toFixed(1).replace('.',','):'—';
+const dt=v=>{const d=new Date(v);return Number.isFinite(d.getTime())?d.toLocaleString('cs-CZ'):'—'};
+let loading=false;
+function graph(rows){
+ const svg=$('chart');svg.textContent='';
+ const data=(Array.isArray(rows)?rows:[]).filter(x=>Number.isFinite(x.value_mmol_l)&&Number.isFinite(Date.parse(x.system_time)));
+ $('count').textContent=data.length+' dostupných měření';
+ const ns='http://www.w3.org/2000/svg';
+ const add=(tag,attrs)=>{const e=document.createElementNS(ns,tag);for(const [k,v] of Object.entries(attrs))e.setAttribute(k,String(v));svg.appendChild(e);return e};
+ if(data.length<2){const t=add('text',{x:10,y:100,fill:'currentColor'});t.textContent='Nedostatek dat pro graf';return}
+ const xs=data.map(x=>Date.parse(x.system_time)),ys=data.map(x=>x.value_mmol_l);
+ const lo=Math.max(0,Math.floor(Math.min(...ys)-1)),hi=Math.ceil(Math.max(...ys)+1);
+ const minX=Math.min(...xs),maxX=Math.max(...xs),spanX=Math.max(1,maxX-minX),spanY=Math.max(1,hi-lo);
+ for(let i=0;i<5;i++){const y=12+i*42;add('line',{x1:38,x2:594,y1:y,y2:y,stroke:'#e5edf0'});let t=add('text',{x:2,y:y+4,fill:'#536779','font-size':12});t.textContent=fmt(hi-i*spanY/4)}
+ const p=data.map((x,i)=>[38+(xs[i]-minX)*550/spanX,180-(ys[i]-lo)*166/spanY]);
+ add('polyline',{points:p.map(v=>v.join(',')).join(' '),stroke:'#087d75','stroke-width':3,fill:'none','stroke-linecap':'round','stroke-linejoin':'round'});
+ const last=p[p.length-1];add('circle',{cx:last[0],cy:last[1],r:4,fill:'#087d75'});
+}
+async function load(){
+ if(loading||document.hidden)return;loading=true;$('refresh').disabled=true;$('status').textContent='Aktualizuji Dexcom Share…';$('error').textContent='';
+ try{
+ const resp=await fetch('/meal-ai/api/live-dexcom',{credentials:'same-origin',cache:'no-store',headers:{'Accept':'application/json'}});
+ if(resp.status===401){$('reading').hidden=true;$('status').textContent='Nejsi přihlášený.';$('error').textContent='Otevři Meal AI, přihlas se pomocí beta přístupového kódu a potom se na tuto stránku vrať.';return}
+ const data=await resp.json().catch(()=>({}));if(!resp.ok)throw Error(typeof data.detail==='string'?data.detail:'Server vrátil HTTP '+resp.status);
+ if(!data.available||!data.latest){$('reading').hidden=true;$('status').textContent=data.reason||'Dexcom zatím nemá měření.';graph([]);return}
+ $('status').textContent=data.fresh?'● Data jsou čerstvá':'● Poslední měření je starší než 15 minut';
+ $('reading').hidden=false;$('value').textContent=fmt(data.latest.value_mmol_l);$('arrow').textContent=data.latest.trend_arrow||'';
+ $('measured').textContent=dt(data.latest.system_time);$('age').textContent=fmt(data.age_minutes)+' min';$('stale').hidden=!!data.fresh;
+ for(const [s,id] of [['15','v15'],['30','v30'],['60','v60']])$(''+id).textContent=data.history?.[s]?fmt(data.history[s].value_mmol_l):'—';
+ graph(data.readings||[]);
+ }catch(e){$('status').textContent='Nepodařilo se načíst data.';$('error').textContent=e.message||'Neznámá chyba';$('reading').hidden=true;}
+ finally{loading=false;$('refresh').disabled=false}
+}
+$('refresh').addEventListener('click',load);window.addEventListener('visibilitychange',()=>{if(!document.hidden)load()});setInterval(()=>{if(!document.hidden)load()},60000);load();
+</script></body></html>
