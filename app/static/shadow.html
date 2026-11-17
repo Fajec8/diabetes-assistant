@@ -226,6 +226,18 @@
  border-bottom:1px solid #e2e8ec; gap:10px; }
 .meal-ai-panel iframe { width:100%; flex:1; border:0; }
 
+
+/* DEXCOM_LIVE_V89_SHADOW_BRIDGE */
+.dexcom-live-v89-card { border: 1px solid #b6dfd8; }
+.dexcom-live-v89-note { font-size: 13px; line-height: 1.55; color: #536879; }
+.dexcom-live-v89-preview { margin-top: 14px; background: #edf8f5; border: 1px solid #badfd3; border-radius: 12px; padding: 14px; }
+.dexcom-live-v89-preview p { margin: 5px 0; }
+.dexcom-live-v89-preview strong { color: #185950; }
+.dexcom-live-v89-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 12px; }
+.dexcom-live-v89-actions button { flex: 1 1 160px; }
+.dexcom-live-v89-error { color: #a12733; font-weight: 650; }
+.dexcom-live-v89-status { font-size: 14px; margin: 10px 0; line-height: 1.45; }
+
 </style>
 </head>
 <body>
@@ -296,6 +308,37 @@
         >
             Zrušit tuto situaci
         </button>
+    </div>
+
+    <!-- DEXCOM_LIVE_V89_SHADOW_BRIDGE: pouze vědomé předvyplnění, nic se neukládá -->
+    <div id="dexcomLiveV89Card" class="card dexcom-live-v89-card">
+        <h2>📡 Dexcom LIVE → Shadow</h2>
+        <p class="dexcom-live-v89-note">
+            Načte čerstvé hodnoty z Dexcom Share do <strong>náhledu</strong>.
+            Až po tvém potvrzení vyplní čas situace, glykémii, trend a historii 15/30/60 minut.
+            Nic samo neukládá ani neurčuje dávku inzulínu.
+        </p>
+        <p class="dexcom-live-v89-note">
+            Přístup vyžaduje přihlášení do
+            <a href="/meal-ai" target="_blank" rel="noopener noreferrer">soukromé Meal AI</a>.
+            Starší Dexcom karta níže používá původní historická data, ne živý Share přenos.
+        </p>
+        <button type="button" id="dexcomLiveV89Fetch" class="primary">📡 Načíst živá data z Dexcomu</button>
+        <p id="dexcomLiveV89Status" class="dexcom-live-v89-status" role="status" aria-live="polite"></p>
+        <div id="dexcomLiveV89Preview" class="dexcom-live-v89-preview hidden">
+            <p><strong id="dexcomLiveV89Value">—</strong> mmol/l · <span id="dexcomLiveV89Trend">—</span></p>
+            <p>Čas měření: <strong id="dexcomLiveV89Time">—</strong> · stáří: <strong id="dexcomLiveV89Age">—</strong></p>
+            <p>−15 min: <strong id="dexcomLiveV89M15">—</strong> · −30 min: <strong id="dexcomLiveV89M30">—</strong> · −60 min: <strong id="dexcomLiveV89M60">—</strong></p>
+            <p class="dexcom-live-v89-note">
+                Potvrzení <strong>nahradí čas a všechny čtyři hodnoty glykémie</strong> ve formuláři.
+                Chybějící historii vymaže, aby se nepromíchala měření z různých časů.
+                Zkontroluj vše s aplikací Dexcom; pouze výzkumné zaznamenávání.
+            </p>
+            <div class="dexcom-live-v89-actions">
+                <button type="button" class="primary" id="dexcomLiveV89Apply">✓ Potvrdit a vyplnit do Shadow</button>
+                <button type="button" class="secondary" id="dexcomLiveV89Cancel">Zrušit</button>
+            </div>
+        </div>
     </div>
 
     <div id="dexcomCard" class="card">
@@ -2489,6 +2532,135 @@ byId("openMealAiButton").addEventListener("click", openMealAi);
 byId("mealAiClose").addEventListener("click", closeMealAi);
 byId("mealCarbs").addEventListener("input", resetMealAiItems);
 byId("mealDescription").addEventListener("input", resetMealAiItems);
+
+// DEXCOM_LIVE_V89_SHADOW_BRIDGE
+// Pure read-only transport. Never auto-create a session, calculate a dose, or save.
+const DEXCOM_LIVE_V89_MAX_AGE_MINUTES = 10;
+let dexcomLiveV89Pending = null;
+let dexcomLiveV89Loading = false;
+
+function dexcomLiveV89Number(value) {
+    // String/undefined/null must not silently turn into zero.
+    return typeof value === "number" && Number.isFinite(value)
+        && value >= 0.1 && value <= 40 ? value : null;
+}
+
+function dexcomLiveV89ReadingAtOffset(reading, latestMs, minutes) {
+    if (reading === null || reading === undefined) return null;
+    const value = dexcomLiveV89Number(reading.value_mmol_l);
+    const when = Date.parse(reading.system_time);
+    if (value === null || !Number.isFinite(when)) return null;
+    const lag = (latestMs - when) / 60000;
+    // The backend searches within a seven-minute tolerance of each historical target.
+    // Reject inconsistent/foreign readings rather than creating fake history.
+    if (lag < minutes - 7 || lag > minutes + 7) return null;
+    return value;
+}
+
+function dexcomLiveV89Prepare(snapshot, nowMs = Date.now()) {
+    if (!snapshot || snapshot.source !== "dexcom_share_unofficial" ||
+        snapshot.available !== true || snapshot.fresh !== true || !snapshot.latest) {
+        throw new Error("Dexcom Share neposkytuje čerstvé platné měření.");
+    }
+    const latest = snapshot.latest;
+    const measuredMs = Date.parse(latest.system_time);
+    const value = dexcomLiveV89Number(latest.value_mmol_l);
+    if (!Number.isFinite(measuredMs) || value === null) {
+        throw new Error("Dexcom vrátil neplatný čas nebo hodnotu měření.");
+    }
+    const ageMinutes = (nowMs - measuredMs) / 60000;
+    if (ageMinutes < -2 || ageMinutes > DEXCOM_LIVE_V89_MAX_AGE_MINUTES) {
+        throw new Error("Poslední měření je starší než 10 minut nebo má neplatný čas. Nic nepředvyplníme.");
+    }
+    const history = snapshot.history || {};
+    const readHistory = minutes => dexcomLiveV89ReadingAtOffset(history[String(minutes)], measuredMs, minutes);
+    const trend = dexcomTrendInfo(latest.trend);
+    return {
+        measuredMs,
+        value,
+        trend: ["RISING", "STABLE", "FALLING"].includes(trend.form) ? trend.form : "",
+        trendLabel: String(trend.label || "—"),
+        history15: readHistory(15),
+        history30: readHistory(30),
+        history60: readHistory(60)
+    };
+}
+
+function dexcomLiveV89ClearPreview(message = "") {
+    dexcomLiveV89Pending = null;
+    byId("dexcomLiveV89Preview").classList.add("hidden");
+    byId("dexcomLiveV89Status").textContent = message;
+}
+
+async function dexcomLiveV89Fetch() {
+    if (dexcomLiveV89Loading) return;
+    dexcomLiveV89ClearPreview("Načítám měření z Dexcom Share…");
+    dexcomLiveV89Loading = true;
+    byId("dexcomLiveV89Fetch").disabled = true;
+    try {
+        const response = await fetch("/meal-ai/api/live-dexcom", {
+            method: "GET", credentials: "same-origin", cache: "no-store",
+            headers: { "Accept": "application/json" }
+        });
+        if (response.status === 401) {
+            throw new Error("Přihlas se nejdřív do Meal AI ve stejném prohlížeči či aplikaci a zkus načíst znovu.");
+        }
+        const snapshot = await response.json().catch(() => null);
+        if (!response.ok) {
+            const detail = snapshot && typeof snapshot.detail === "string" ? snapshot.detail : "HTTP " + response.status;
+            throw new Error("Dexcom LIVE se nepodařilo načíst: " + detail);
+        }
+        const candidate = dexcomLiveV89Prepare(snapshot);
+        if (byId("situationCard").classList.contains("hidden")) {
+            throw new Error("Nejdřív otevři formulář pro novou situaci. Existující situaci nelze přepisovat.");
+        }
+        dexcomLiveV89Pending = candidate;
+        byId("dexcomLiveV89Value").textContent = String(candidate.value).replace(".", ",");
+        byId("dexcomLiveV89Trend").textContent = candidate.trendLabel;
+        byId("dexcomLiveV89Time").textContent = new Date(candidate.measuredMs).toLocaleString("cs-CZ");
+        byId("dexcomLiveV89Age").textContent = ((Date.now() - candidate.measuredMs) / 60000).toFixed(1).replace(".", ",") + " min";
+        for (const [field, id] of [["history15", "dexcomLiveV89M15"], ["history30", "dexcomLiveV89M30"], ["history60", "dexcomLiveV89M60"]]) {
+            const value = candidate[field];
+            byId(id).textContent = value === null ? "nedostupné" : String(value).replace(".", ",");
+        }
+        byId("dexcomLiveV89Preview").classList.remove("hidden");
+        byId("dexcomLiveV89Status").textContent = "Načteno. Před převzetím ověř měření a výslovně ho potvrď.";
+    } catch (error) {
+        dexcomLiveV89ClearPreview(error.message || "Načtení se nezdařilo.");
+    } finally {
+        dexcomLiveV89Loading = false;
+        byId("dexcomLiveV89Fetch").disabled = false;
+    }
+}
+
+function dexcomLiveV89Apply() {
+    const candidate = dexcomLiveV89Pending;
+    if (!candidate) return;
+    if (byId("situationCard").classList.contains("hidden")) {
+        dexcomLiveV89ClearPreview("Situace už není v režimu vytváření. Nic nebylo změněno.");
+        return;
+    }
+    const ageMinutes = (Date.now() - candidate.measuredMs) / 60000;
+    if (ageMinutes < -2 || ageMinutes > DEXCOM_LIVE_V89_MAX_AGE_MINUTES) {
+        dexcomLiveV89ClearPreview("Náhled zestárl. Načti nová data; formulář zůstal beze změny.");
+        return;
+    }
+    // Only these six input fields are changed, and only by explicit user action.
+    // Missing historical readings clear previous values to avoid time mixing.
+    byId("decisionAt").value = localDateTimeValue(new Date(candidate.measuredMs));
+    handleSituationDayChange();
+    byId("glucose").value = String(candidate.value);
+    byId("glucose15").value = candidate.history15 === null ? "" : String(candidate.history15);
+    byId("glucose30").value = candidate.history30 === null ? "" : String(candidate.history30);
+    byId("glucose60").value = candidate.history60 === null ? "" : String(candidate.history60);
+    byId("trend").value = candidate.trend;
+    dexcomLiveV89ClearPreview("Hodnoty byly předvyplněny do Shadow formuláře. Zkontroluj je a situaci případně sám ulož.");
+    byId("situationCard").scrollIntoView({behavior: "smooth", block: "start"});
+}
+
+byId("dexcomLiveV89Fetch").addEventListener("click", dexcomLiveV89Fetch);
+byId("dexcomLiveV89Apply").addEventListener("click", dexcomLiveV89Apply);
+byId("dexcomLiveV89Cancel").addEventListener("click", () => dexcomLiveV89ClearPreview("Převzetí zrušeno. Formulář se nezměnil."));
 
 byId("decisionAt").value = localDateTimeValue();
 restoreSameDayContext();
