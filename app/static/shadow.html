@@ -25,7 +25,7 @@
         h2 { margin-top: 0; font-size: 21px; }
         h3 { margin-bottom: 8px; }
         .subtitle { margin: 0 0 18px; color: #667085; }
-        .warning, .info, .success, .error, .dexcom-warning {
+        .warning, .info, .success, .error {
             border-radius: 12px;
             padding: 12px;
             margin-bottom: 16px;
@@ -36,7 +36,6 @@
         .info { background: #e7f1ff; border: 1px solid #b6d4fe; }
         .success { background: #d1e7dd; color: #0f5132; }
         .error { background: #f8d7da; color: #842029; }
-        .dexcom-warning { background: #fff3cd; color: #664d03; margin-top: 12px; }
         .card {
             background: white;
             border-radius: 16px;
@@ -128,50 +127,6 @@
         }
         .result-row:last-child { border-bottom: 0; }
         .result-value { font-weight: 700; text-align: right; }
-        .dexcom-head {
-            display: flex;
-            align-items: flex-start;
-            justify-content: space-between;
-            gap: 12px;
-        }
-        .dexcom-title-row { display: flex; align-items: center; gap: 8px; }
-        .dexcom-dot {
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            background: #98a2b3;
-            flex: 0 0 auto;
-        }
-        .dexcom-dot.ok { background: #198754; }
-        .dexcom-dot.bad { background: #dc3545; }
-        .dexcom-grid {
-            display: grid;
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-            gap: 10px;
-            margin-top: 14px;
-        }
-        .dexcom-value {
-            background: #f8f9fa;
-            border: 1px solid #eaecf0;
-            border-radius: 12px;
-            padding: 12px;
-        }
-        .dexcom-value .label { font-size: 12px; color: #667085; margin-bottom: 4px; }
-        .dexcom-value .value { font-size: 22px; font-weight: 750; }
-        .dexcom-meta {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px 14px;
-            margin-top: 12px;
-            color: #667085;
-            font-size: 13px;
-        }
-        .button-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-        }
-
         .active-sessions {
             display: grid;
             gap: 8px;
@@ -211,7 +166,7 @@
         @media (max-width: 600px) {
             .page { padding: 10px 10px 40px; }
             .card { padding: 15px; border-radius: 14px; }
-            .grid, .dexcom-grid, .button-row { grid-template-columns: 1fr; }
+            .grid { grid-template-columns: 1fr; }
             .full { grid-column: auto; }
             h1 { font-size: 25px; }
         }
@@ -321,7 +276,8 @@
         <p class="dexcom-live-v89-note">
             Přístup vyžaduje přihlášení do
             <a href="/meal-ai" target="_blank" rel="noopener noreferrer">soukromé Meal AI</a>.
-            Starší Dexcom karta níže používá původní historická data, ne živý Share přenos.
+            Podrobný živý graf otevřeš na stránce
+            <a href="/meal-ai/live-dexcom" target="_blank" rel="noopener noreferrer">Dexcom LIVE</a>.
         </p>
         <button type="button" id="dexcomLiveV89Fetch" class="primary">📡 Načíst živá data z Dexcomu</button>
         <p id="dexcomLiveV89Status" class="dexcom-live-v89-status" role="status" aria-live="polite"></p>
@@ -338,61 +294,6 @@
                 <button type="button" class="primary" id="dexcomLiveV89Apply">✓ Potvrdit a vyplnit do Shadow</button>
                 <button type="button" class="secondary" id="dexcomLiveV89Cancel">Zrušit</button>
             </div>
-        </div>
-    </div>
-
-    <div id="dexcomCard" class="card">
-        <!-- DEXCOM_LIVE_V88_PRIVATE_READ_ONLY -->
-        <p><a href="/meal-ai/live-dexcom" target="_blank" rel="noopener noreferrer" style="font-weight:700;color:#087d75">📡 Živý Dexcom (soukromý test)</a></p>
-        <div class="dexcom-head">
-            <div>
-                <div class="dexcom-title-row">
-                    <span id="dexcomDot" class="dexcom-dot"></span>
-                    <h2 style="margin-bottom: 2px;">Dexcom</h2>
-                </div>
-                <div id="dexcomStatusText" class="muted">Načítám uložená CGM data…</div>
-            </div>
-        </div>
-
-        <div id="dexcomValues" class="hidden">
-            <div class="dexcom-grid">
-                <div class="dexcom-value">
-                    <div class="label">Teď</div>
-                    <div id="dexNow" class="value">—</div>
-                </div>
-                <div class="dexcom-value">
-                    <div class="label">Před 15 min</div>
-                    <div id="dex15" class="value">—</div>
-                </div>
-                <div class="dexcom-value">
-                    <div class="label">Před 30 min</div>
-                    <div id="dex30" class="value">—</div>
-                </div>
-                <div class="dexcom-value">
-                    <div class="label">Před 60 min</div>
-                    <div id="dex60" class="value">—</div>
-                </div>
-            </div>
-
-            <div class="dexcom-meta">
-                <span id="dexTrend">Trend: —</span>
-                <span id="dexAge">Stáří dat: —</span>
-                <span id="dexEnvironment">Prostředí: —</span>
-            </div>
-
-            <div id="dexcomStaleWarning" class="dexcom-warning hidden"></div>
-
-            <div class="button-row">
-                <button id="useDexcomButton" class="primary" type="button">Použít Dexcom data</button>
-                <button id="reloadDexcomButton" class="secondary" type="button">Načíst znovu</button>
-            </div>
-        </div>
-
-        <div id="dexcomUnavailable" class="hidden">
-            <div class="info" style="margin-bottom: 0;">
-                Dexcom data se nepodařilo načíst. Pokud účet ještě není připojený, můžeš ho připojit přes backend.
-            </div>
-            <button id="connectDexcomButton" class="secondary" type="button">Připojit Dexcom</button>
         </div>
     </div>
 
@@ -636,8 +537,6 @@ const newSessionModeKey =
     "diabetesShadowNewSessionMode";
 
 let activeSessions = [];
-
-let dexcomContext = null;
 
 // Browser-local form defaults. Never used as a new event timestamp.
 let lastLoadedContextDay = null;
@@ -904,18 +803,6 @@ async function requestJson(url, options = {}) {
     return data;
 }
 
-function formatGlucose(value) {
-    if (value === null || value === undefined) return "—";
-    return Number(value).toFixed(2).replace(/\.00$/, "").replace(/(\.\d)0$/, "$1") + " mmol/l";
-}
-
-function formatAge(minutes) {
-    if (minutes === null || minutes === undefined) return "—";
-    if (minutes < 60) return Math.round(minutes) + " min";
-    if (minutes < 1440) return (minutes / 60).toFixed(1).replace(".0", "") + " h";
-    return (minutes / 1440).toFixed(1).replace(".0", "") + " dne";
-}
-
 function dexcomTrendInfo(rawTrend) {
     const trend = String(rawTrend || "").toLowerCase();
 
@@ -930,89 +817,6 @@ function dexcomTrendInfo(rawTrend) {
     }
 
     return { form: "", label: rawTrend || "—" };
-}
-
-async function loadDexcomContext() {
-    const dot = byId("dexcomDot");
-    const statusText = byId("dexcomStatusText");
-    const values = byId("dexcomValues");
-    const unavailable = byId("dexcomUnavailable");
-
-    dot.className = "dexcom-dot";
-    statusText.textContent = "Načítám uložená CGM data…";
-    values.classList.add("hidden");
-    unavailable.classList.add("hidden");
-
-    try {
-        const context = await requestJson("/dexcom/context/" + currentUserId());
-        dexcomContext = context;
-
-        dot.className = "dexcom-dot ok";
-        statusText.textContent = "Dexcom je připojen a data jsou dostupná.";
-        values.classList.remove("hidden");
-
-        byId("dexNow").textContent = formatGlucose(context.glucose_now?.value_mmol_l);
-        byId("dex15").textContent = formatGlucose(context.glucose_15m_ago?.value_mmol_l);
-        byId("dex30").textContent = formatGlucose(context.glucose_30m_ago?.value_mmol_l);
-        byId("dex60").textContent = formatGlucose(context.glucose_60m_ago?.value_mmol_l);
-
-        const trendInfo = dexcomTrendInfo(context.glucose_now?.trend);
-        byId("dexTrend").textContent = "Trend: " + trendInfo.label;
-        byId("dexAge").textContent = "Stáří dat: " + formatAge(context.data_age_minutes);
-        byId("dexEnvironment").textContent = "Prostředí: " + (context.environment || "—");
-
-        const warning = byId("dexcomStaleWarning");
-        const age = Number(context.data_age_minutes ?? 0);
-        const isStale = age > 20;
-
-        if (isStale) {
-            warning.classList.remove("hidden");
-            warning.textContent = context.environment === "sandbox"
-                ? "Pozor: sandboxová data jsou stará. Pro test UI je můžeš použít, ale nejde o aktuální glykémii."
-                : "Pozor: poslední Dexcom data jsou starší než 20 minut. Pro aktuální rozhodnutí je nepoužívej.";
-        } else {
-            warning.classList.add("hidden");
-            warning.textContent = "";
-        }
-
-        byId("useDexcomButton").disabled = (
-            context.environment !== "sandbox" && isStale
-        );
-    } catch (error) {
-        dexcomContext = null;
-        dot.className = "dexcom-dot bad";
-        statusText.textContent = "Dexcom data nejsou dostupná: " + error.message;
-        unavailable.classList.remove("hidden");
-    }
-}
-
-function useDexcomData() {
-    if (!dexcomContext) {
-        showMessage("Dexcom data zatím nejsou načtená.");
-        return;
-    }
-
-    const now = dexcomContext.glucose_now?.value_mmol_l;
-    if (now === null || now === undefined) {
-        showMessage("Dexcom neposkytl aktuální hodnotu glykémie.");
-        return;
-    }
-
-    byId("glucose").value = now;
-    byId("glucose15").value = dexcomContext.glucose_15m_ago?.value_mmol_l ?? "";
-    byId("glucose30").value = dexcomContext.glucose_30m_ago?.value_mmol_l ?? "";
-    byId("glucose60").value = dexcomContext.glucose_60m_ago?.value_mmol_l ?? "";
-
-    const trendInfo = dexcomTrendInfo(dexcomContext.glucose_now?.trend);
-    byId("trend").value = trendInfo.form;
-
-    if (dexcomContext.latest_system_time) {
-        byId("decisionAt").value = localDateTimeValue(new Date(dexcomContext.latest_system_time));
-        handleSituationDayChange();
-    }
-
-    showMessage("Dexcom hodnoty byly vloženy do formuláře.", "success");
-    byId("situationCard").scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
 function resetSections() {
@@ -2417,32 +2221,6 @@ byId(
 );
 
 byId(
-    "useDexcomButton"
-).addEventListener(
-    "click",
-    useDexcomData
-);
-
-byId(
-    "reloadDexcomButton"
-).addEventListener(
-    "click",
-    loadDexcomContext
-);
-
-byId(
-    "connectDexcomButton"
-).addEventListener(
-    "click",
-    () => {
-        window.location.href = (
-            "/dexcom/connect/"
-            + currentUserId()
-        );
-    }
-);
-
-byId(
     "startAnotherSessionButton"
 ).addEventListener(
     "click",
@@ -2667,7 +2445,6 @@ restoreSameDayContext();
 updateMealFields();
 updatePlanFields();
 loadSession();
-loadDexcomContext();
 </script>
 </body>
 </html>

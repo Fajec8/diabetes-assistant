@@ -25,7 +25,7 @@ def test_bridge_is_present_once_and_only_shadow_html_is_extended():
     page = shadow()
     assert page.count('id="dexcomLiveV89Card"') == 1
     assert page.count('function dexcomLiveV89Apply()') == 1
-    assert page.count('id="dexcomCard"') == 1  # old historical UI remains
+    assert page.count('id="dexcomCard"') == 0  # obsolete sandbox card removed
 
 
 def test_bridge_reads_only_private_live_endpoint():
@@ -88,3 +88,19 @@ def test_preview_is_cancelable_and_uses_textcontent_not_html_injection():
     assert 'textContent' in js
     assert 'innerHTML' not in js
     assert 'postMessage(' not in js
+
+
+def test_old_sandbox_dexcom_panel_and_fetch_are_gone():
+    page = shadow()
+    assert page.count('id="dexcomLiveV89Card"') == 1
+    assert 'Živý Dexcom (soukromý test)' not in page
+    assert 'id="dexcomCard"' not in page
+    assert 'loadDexcomContext(' not in page
+    assert '/dexcom/context/' not in page
+    assert 'useDexcomButton' not in page
+    assert 'connectDexcomButton' not in page
+    assert 'sandboxová data jsou stará' not in page
+    assert 'Starší Dexcom karta níže' not in page
+    assert '<a href="/meal-ai/live-dexcom"' in page
+    assert 'function dexcomTrendInfo(rawTrend)' in page
+    assert 'fetch("/meal-ai/api/live-dexcom"' in page
